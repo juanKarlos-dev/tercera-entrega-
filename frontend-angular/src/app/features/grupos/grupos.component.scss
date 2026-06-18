@@ -1,0 +1,459 @@
+:host { display: block; padding: 0; }
+
+/* ── Header ──────────────────────────────── */
+.grupos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h1 { font-size: 24px; font-weight: 700; margin: 0; }
+  p  { color: #6B7280; font-size: 14px; margin: 4px 0 0; }
+}
+
+/* ── Tabs ────────────────────────────────── */
+.tab-row {
+  display: flex;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6B7280;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s;
+
+  &:hover { color: #374151; }
+}
+
+.tab-btn--activo {
+  color: #2563EB;
+  border-bottom-color: #2563EB;
+  font-weight: 600;
+  background: transparent;
+}
+
+/* ── Grid de grupos ──────────────────────── */
+.grupos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ── Card ────────────────────────────────── */
+.grupo-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.15s;
+
+  &:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+}
+
+.grupo-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.grupo-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #2563EB;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.grupo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.grupo-nombre {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.grupo-desc {
+  font-size: 12px;
+  color: #6B7280;
+  margin: 2px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Badge de tipo ───────────────────────── */
+.grupo-tipo-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: none;
+  cursor: default;
+
+  &.badge-publico { background: #DCFCE7; color: #16A34A; }
+  &.badge-privado { background: #FEF3C7; color: #D97706; }
+}
+
+/* ── Meta miembros ───────────────────────── */
+.grupo-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #9CA3AF;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+/* ── Acciones de card ────────────────────── */
+.grupo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-accion {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #E5E7EB;
+  background: white;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 500;
+  transition: all 0.15s;
+
+  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) { background: #F9FAFB; border-color: #D1D5DB; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-accion--primary {
+  background: #2563EB;
+  color: white;
+  border-color: #2563EB;
+
+  &:hover:not(:disabled) { background: #1D4ED8; border-color: #1D4ED8; }
+}
+
+.btn-accion--danger {
+  color: #EF4444;
+  border-color: #FCA5A5;
+
+  &:hover:not(:disabled) { background: #FEF2F2; }
+}
+
+.btn-accion--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Solo-admin aviso ────────────────────── */
+.solo-admin-aviso {
+  font-size: 11px;
+  color: #9ca3af;
+  align-self: center;
+  cursor: default;
+}
+
+/* ── Estados vacío / carga ───────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+  color: #9ca3af;
+  gap: 12px;
+
+  mat-icon { font-size: 64px; width: 64px; height: 64px; }
+  p { font-size: .95rem; text-align: center; max-width: 280px; }
+}
+
+.loading-center {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}
+
+/* ── Panel de miembros ───────────────────── */
+.panel-miembros {
+  background: #F9FAFB;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #E5E7EB;
+  margin-top: 8px;
+}
+
+.miembros-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px;
+}
+
+.miembro-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 13px;
+  flex-wrap: wrap;
+
+  &:last-child { border-bottom: none; }
+}
+
+.miembro-id {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+  word-break: break-all;
+}
+
+.miembro-acciones {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* ── Badges de rol ───────────────────────── */
+.badge-rol {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.badge-admin   { background: #DBEAFE; color: #1E40AF; }
+.badge-miembro { background: #F3F4F6; color: #6B7280; }
+
+.badge-bloqueado {
+  background: #FEE2E2;
+  color: #DC2626;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* ── Panel de chat grupal ──────────────── */
+.panel-chat {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.chat-mensajes-grupo {
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-vacio {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  margin: auto;
+}
+
+.msg-grupo-remitente {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin: 0 0 2px;
+}
+
+.msg-grupo-texto {
+  color: #111827;
+  margin: 0;
+  word-break: break-word;
+}
+
+.msg-grupo-hora {
+  font-size: 10px;
+  color: #9CA3AF;
+  text-align: right;
+  margin-top: 2px;
+  display: block;
+}
+
+.chat-input-grupo {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #F3F4F6;
+  align-items: center;
+}
+
+.input-grupo {
+  flex: 1;
+  border: 1px solid #E5E7EB;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  outline: none;
+
+  &:focus { border-color: #2563EB; }
+}
+
+.btn-enviar-grupo {
+  background: #2563EB;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+/* ── Imagen de grupo (avatar con foto) ───── */
+.grupo-avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #E5E7EB;
+  flex-shrink: 0;
+}
+
+/* ── Header del chat ─────────────────────── */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #F3F4F6;
+  background: #F9FAFB;
+}
+
+.chat-header-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #E5E7EB;
+}
+
+.chat-header-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #2563EB;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-header-nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.chat-header-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+/* ── Mensaje eliminado ───────────────────── */
+.msg-eliminado-wrap {
+  opacity: 0.6;
+}
+
+.msg-eliminado {
+  color: #9CA3AF;
+  font-style: italic;
+  font-size: 12px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Botón eliminar mensaje (admin) ─────── */
+.msg-grupo-item {
+  background: #F3F4F6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.msg-grupo-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-eliminar-msg {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #D1D5DB;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.15s;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+  opacity: 0;
+  transition: opacity 0.15s;
+  &:hover { color: #EF4444; }
+}
+
+.msg-grupo-item:hover .btn-eliminar-msg {
+  opacity: 1;
+}

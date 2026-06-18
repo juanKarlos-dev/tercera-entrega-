@@ -1,0 +1,95 @@
+<div class="roles-view-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-main">
+      <div class="title-group">
+        <h1 class="page-title">Roles del Sistema</h1>
+        <p class="page-subtitle">Administra los niveles de acceso y responsabilidades de los usuarios.</p>
+      </div>
+      <div class="header-actions">
+        @if (canCreateRole()) {
+          <button mat-raised-button color="primary" class="new-role-btn" (click)="openRoleDialog()">
+            <mat-icon>add</mat-icon>
+            Crear nuevo rol
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="filters-bar">
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input [formControl]="searchControl" placeholder="Buscar rol por nombre o descripción...">
+      </div>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+  }
+
+  <!-- Roles Grid -->
+  <div class="roles-grid">
+    @for (role of filteredRoles(); track role.id) {
+      <mat-card class="role-card">
+        <div class="card-header">
+          <div class="role-icon">
+            <mat-icon>shield</mat-icon>
+          </div>
+          <div class="badge-container">
+            @if (isProtected(role)) {
+              <span class="system-badge">SISTEMA</span>
+            }
+          </div>
+          <button mat-icon-button [matMenuTriggerFor]="roleMenu" class="more-btn">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #roleMenu="matMenu">
+            @if (canEditRole()) {
+              <button mat-menu-item (click)="openRoleDialog(role)">
+                <mat-icon>edit</mat-icon>
+                <span>Editar</span>
+              </button>
+            }
+            @if (canDeleteRole()) {
+              <button mat-menu-item (click)="removeRole(role)" [disabled]="isProtected(role)">
+                <mat-icon>delete</mat-icon>
+                <span>Eliminar</span>
+              </button>
+            }
+          </mat-menu>
+        </div>
+
+        <mat-card-content>
+          <h3 class="role-name">{{ role.name }}</h3>
+          <p class="role-description">{{ role.description || 'Sin descripción disponible.' }}</p>
+          
+          <div class="user-stat">
+            <mat-icon>people</mat-icon>
+            <span class="count">{{ getUserCount(role.id) }}</span>
+            <span class="label">usuarios asignados</span>
+          </div>
+        </mat-card-content>
+
+        <mat-divider></mat-divider>
+
+        <mat-card-actions>
+          @if (canManageRolePermissions()) {
+            <button mat-button class="btn-permissions" (click)="assignPermissions(role)">
+              <mat-icon>security</mat-icon>
+              Gestionar Permisos
+            </button>
+          }
+        </mat-card-actions>
+      </mat-card>
+    } @empty {
+      @if (!isLoading()) {
+        <div class="empty-state">
+          <mat-icon>search_off</mat-icon>
+          <p>No se encontraron roles con ese criterio.</p>
+        </div>
+      }
+    }
+  </div>
+</div>

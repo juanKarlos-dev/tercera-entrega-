@@ -1,0 +1,177 @@
+<section class="hero mat-elevation-z1">
+  <div>
+    <h1>Hola, {{ user()?.name || user()?.email }}</h1>
+    @if (user()?.username) {
+      <p class="github-handle">GitHub: &#64;{{ user()?.username }}</p>
+    }
+    <p class="lead">
+      Sistema de Buses Inteligentes — Seguridad y Operaciones unificadas.
+    </p>
+    <mat-chip-set class="chips" aria-label="Roles">
+      @for (r of roles(); track r) {
+        <mat-chip>{{ r }}</mat-chip>
+      } @empty {
+        <mat-chip>Ciudadano (por defecto)</mat-chip>
+      }
+    </mat-chip-set>
+  </div>
+  <mat-icon class="hero-icon">directions_bus</mat-icon>
+</section>
+
+@if (!esCiudadano() && !esConductor() && !esSupervisor() && !esAdminEmpresa()) {
+  <h3 class="section-title"><mat-icon>security</mat-icon> Seguridad</h3>
+  <div class="grid">
+    @for (tile of securityTiles; track tile.route) {
+      <mat-card class="tile" [routerLink]="tile.route">
+        <mat-icon>{{ tile.icon }}</mat-icon>
+        <h2>{{ tile.label }}</h2>
+        <p>{{ tile.description }}</p>
+        <button mat-stroked-button color="primary" [routerLink]="tile.route">Abrir</button>
+      </mat-card>
+    }
+  </div>
+
+  <h3 class="section-title"><mat-icon>directions_bus</mat-icon> Operaciones</h3>
+  <div class="grid">
+    @for (tile of negocioTiles; track tile.route) {
+      <mat-card class="tile" [routerLink]="tile.route">
+        <mat-icon>{{ tile.icon }}</mat-icon>
+        <h2>{{ tile.label }}</h2>
+        <p>{{ tile.description }}</p>
+        <button mat-stroked-button color="primary" [routerLink]="tile.route">Abrir</button>
+      </mat-card>
+    }
+  </div>
+}
+
+@if (esAdminEmpresa() && !esAdminSistema()) {
+  <h3 class="section-title"><mat-icon>business</mat-icon> Mi empresa</h3>
+  <div class="admin-empresa-grid">
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/empresas'">
+      <mat-icon class="admin-empresa-icon">domain</mat-icon>
+      <h2>Mi Empresa</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/buses'">
+      <mat-icon class="admin-empresa-icon">directions_bus</mat-icon>
+      <h2>Buses</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/conductores'">
+      <mat-icon class="admin-empresa-icon">badge</mat-icon>
+      <h2>Conductores</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/paraderos'">
+      <mat-icon class="admin-empresa-icon">place</mat-icon>
+      <h2>Paraderos</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/rutas'">
+      <mat-icon class="admin-empresa-icon">route</mat-icon>
+      <h2>Rutas</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/turnos'">
+      <mat-icon class="admin-empresa-icon">schedule</mat-icon>
+      <h2>Turnos</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/programaciones'">
+      <mat-icon class="admin-empresa-icon">calendar_month</mat-icon>
+      <h2>Programaciones</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/boletos'">
+      <mat-icon class="admin-empresa-icon">confirmation_number</mat-icon>
+      <h2>Boletos</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/incidentes'">
+      <mat-icon class="admin-empresa-icon">warning</mat-icon>
+      <h2>Incidentes</h2>
+    </mat-card>
+    <mat-card class="tile admin-empresa-tile" [routerLink]="'/reportes'">
+      <mat-icon class="admin-empresa-icon">bar_chart</mat-icon>
+      <h2>Reportes</h2>
+    </mat-card>
+  </div>
+}
+
+@if (esSupervisor()) {
+  <h3 class="section-title"><mat-icon>supervisor_account</mat-icon> Acceso rápido</h3>
+  <div class="supervisor-grid">
+    <mat-card class="tile supervisor-tile" [routerLink]="'/turnos'">
+      <mat-icon class="supervisor-icon">schedule</mat-icon>
+      <h2>Turnos</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/programaciones'">
+      <mat-icon class="supervisor-icon">calendar_month</mat-icon>
+      <h2>Programaciones</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/boletos'">
+      <mat-icon class="supervisor-icon">confirmation_number</mat-icon>
+      <h2>Boletos</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/incidentes'">
+      <mat-icon class="supervisor-icon">warning</mat-icon>
+      <h2>Incidentes</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/reportes'">
+      <mat-icon class="supervisor-icon">bar_chart</mat-icon>
+      <h2>Reportes</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/tracking'">
+      <mat-icon class="supervisor-icon">map</mat-icon>
+      <h2>Tracking</h2>
+    </mat-card>
+    <mat-card class="tile supervisor-tile" [routerLink]="'/panel-control'">
+      <mat-icon class="supervisor-icon">dashboard_customize</mat-icon>
+      <h2>Panel Control</h2>
+    </mat-card>
+  </div>
+}
+
+@if (esConductor()) {
+  <h3 class="section-title"><mat-icon>badge</mat-icon> Mi espacio de trabajo</h3>
+  <div class="grid conductor-grid">
+    <mat-card class="tile conductor-tile" [routerLink]="'/turnos'">
+      <mat-icon class="conductor-icon">schedule</mat-icon>
+      <h2>Mis Turnos</h2>
+    </mat-card>
+    <mat-card class="tile conductor-tile" [routerLink]="'/turnos'" [queryParams]="{retraso: '1'}">
+      <mat-icon class="conductor-icon">warning_amber</mat-icon>
+      <h2>Reportar Retraso</h2>
+    </mat-card>
+    <mat-card class="tile conductor-tile" [routerLink]="'/incidentes'">
+      <mat-icon class="conductor-icon">warning</mat-icon>
+      <h2>Reportar Incidente</h2>
+    </mat-card>
+    <mat-card class="tile conductor-tile" [routerLink]="'/programaciones'">
+      <mat-icon class="conductor-icon">calendar_month</mat-icon>
+      <h2>Programaciones</h2>
+    </mat-card>
+  </div>
+}
+
+@if (esCiudadano()) {
+  <h3 class="section-title"><mat-icon>explore</mat-icon> Acceso rápido</h3>
+  <div class="grid ciudadano-grid">
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/paraderos'">
+      <mat-icon class="ciudadano-icon">place</mat-icon>
+      <h2>Paraderos</h2>
+    </mat-card>
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/rutas'">
+      <mat-icon class="ciudadano-icon">route</mat-icon>
+      <h2>Rutas</h2>
+    </mat-card>
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/programaciones'">
+      <mat-icon class="ciudadano-icon">calendar_month</mat-icon>
+      <h2>Horarios</h2>
+    </mat-card>
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/boletos'">
+      <mat-icon class="ciudadano-icon">confirmation_number</mat-icon>
+      <h2>Boletos</h2>
+    </mat-card>
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/metodos-pago'">
+      <mat-icon class="ciudadano-icon">payment</mat-icon>
+      <h2>Métodos de Pago</h2>
+    </mat-card>
+    <mat-card class="tile ciudadano-tile" [routerLink]="'/tracking'">
+      <mat-icon class="ciudadano-icon">map</mat-icon>
+      <h2>Seguimiento</h2>
+    </mat-card>
+  </div>
+}

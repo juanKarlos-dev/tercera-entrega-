@@ -1,0 +1,103 @@
+.dialog-container {
+  min-width: 500px;
+  max-width: 600px;
+  
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem 1.5rem 1rem;
+    
+    .header-content {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+      
+      .title-icon {
+        background: #f0f3ff;
+        color: #2d3ef0;
+        padding: 0.75rem;
+        border-radius: 14px;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .title-text {
+        h2 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e1b4b; line-height: 1.2; }
+        .subtitle { margin: 4px 0 0; font-size: 0.9rem; color: #64748b; font-weight: 500; }
+      }
+    }
+    
+    .close-btn { color: #94a3b8; }
+  }
+
+  .dialog-body {
+    padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+    
+    .status-summary {
+      margin-bottom: 2rem;
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        background: #fef2f2;
+        color: #ef4444;
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+        &.active { background: #f0fdf4; color: #10b981; .dot { background: #10b981; } }
+      }
+    }
+    
+    .roles-list-section {
+      .section-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 1rem; }
+      
+      .roles-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        
+        .role-item {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem;
+          background: #f8fafc;
+          border: 1px solid #f1f5f9;
+          border-radius: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+          
+          &:hover { border-color: #2d3ef0; background: #f0f3ff; }
+          &.checked { border-color: #2d3ef0; background: white; box-shadow: 0 4px 12px rgba(45, 62, 240, 0.05); }
+          
+          .role-info {
+            display: flex;
+            flex-direction: column;
+            .role-name { font-size: 1rem; font-weight: 700; color: #1e1b4b; }
+            .role-desc { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+          }
+        }
+      }
+    }
+  }
+
+  .dialog-actions {
+    padding: 1.25rem 1.5rem;
+    gap: 1rem;
+    
+    button { border-radius: 12px; font-weight: 700; padding: 0.5rem 1.25rem; }
+    .save-btn { background: #2d3ef0; mat-icon { margin-right: 6px; } }
+  }
+
+  .loading-state { text-align: center; padding: 3rem 0; p { margin-top: 1rem; color: #64748b; font-weight: 500; } }
+  .empty-roles { text-align: center; padding: 3rem 0; color: #94a3b8; mat-icon { font-size: 40px; width: 40px; height: 40px; } }
+}

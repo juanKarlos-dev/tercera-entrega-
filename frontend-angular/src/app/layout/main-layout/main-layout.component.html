@@ -1,0 +1,91 @@
+<mat-sidenav-container class="admin-shell" [hasBackdrop]="isHandset()">
+  <!-- Sidebar -->
+  <mat-sidenav
+    #drawer
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="isHandset() ? sidenavOpen : true"
+    class="sidebar"
+  >
+    <div class="sidebar-header">
+      <div class="logo-container">
+        <mat-icon class="logo-icon">directions_bus</mat-icon>
+        <div class="logo-text">
+          <span class="brand">TransporteYA</span>
+          <span class="tagline">Seguridad</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+        <mat-icon>dashboard</mat-icon>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/users" routerLinkActive="active" class="nav-item">
+        <mat-icon>group</mat-icon>
+        <span>Usuarios</span>
+      </a>
+      <a routerLink="/roles" routerLinkActive="active" class="nav-item">
+        <mat-icon>badge</mat-icon>
+        <span>Roles</span>
+      </a>
+      <a routerLink="/role-permissions" routerLinkActive="active" class="nav-item">
+        <mat-icon>rule</mat-icon>
+        <span>Permisos</span>
+      </a>
+      <a class="nav-item disabled">
+        <mat-icon>devices</mat-icon>
+        <span>Sesiones activas</span>
+      </a>
+      <a class="nav-item disabled">
+        <mat-icon>history_edu</mat-icon>
+        <span>Auditoría</span>
+      </a>
+      <a class="nav-item disabled">
+        <mat-icon>settings</mat-icon>
+        <span>Configuración</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill" (click)="logout()">
+        <div class="avatar-sm">{{ userInitials() }}</div>
+        <div class="user-info">
+          <span class="name">{{ userLabel() }}</span>
+          <span class="role">{{ userRole() }}</span>
+        </div>
+        <mat-icon class="logout-icon">logout</mat-icon>
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="main-content-wrapper">
+    <!-- Optional Header/Toolbar if needed, but the design shows a clean top right area -->
+    <header class="top-header" *ngIf="!isHandset()">
+      <div class="header-right">
+        <button mat-icon-button class="notification-btn">
+          <mat-icon badge="2">notifications</mat-icon>
+        </button>
+        <div class="company-selector">
+          <mat-icon>business</mat-icon>
+          <span>Empresa Demo</span>
+          <mat-icon>expand_more</mat-icon>
+        </div>
+      </div>
+    </header>
+
+    @if (isHandset()) {
+      <mat-toolbar color="primary" class="mobile-toolbar">
+        <button mat-icon-button (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span>TransporteYA</span>
+      </mat-toolbar>
+    }
+
+    <main class="page-content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

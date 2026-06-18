@@ -1,0 +1,314 @@
+<div class="grupos-header">
+  <div>
+    <h1>Grupos</h1>
+    <p>Directorio de grupos y comunidades de usuarios</p>
+  </div>
+  <button mat-raised-button color="primary" (click)="abrirCrearGrupo()">
+    <mat-icon>add</mat-icon>
+    Nuevo grupo
+  </button>
+</div>
+
+<div class="tab-row">
+  <button class="tab-btn" [class.tab-btn--activo]="tabActiva() === 0" (click)="tabActiva.set(0)">
+    Directorio
+  </button>
+  <button class="tab-btn" [class.tab-btn--activo]="tabActiva() === 1" (click)="tabActiva.set(1)">
+    Mis grupos
+  </button>
+</div>
+
+<!-- ── Tab 0: Directorio ─────────────────── -->
+@if (tabActiva() === 0) {
+
+  <div class="directorio-busqueda" style="margin-bottom: 20px;">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>Buscar grupos por nombre o descripción...</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [ngModel]="busquedaPublicos()" (ngModelChange)="onBusquedaPublicos($event)" placeholder="Ej: Deportes, Tecnología..." />
+    </mat-form-field>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-center">
+      <mat-progress-spinner diameter="40" mode="indeterminate" />
+    </div>
+  } @else if (!publicosFiltrados().length) {
+    <div class="empty-state">
+      <mat-icon>group_work</mat-icon>
+      <p>No se encontraron grupos públicos.</p>
+    </div>
+  } @else {
+    <div class="grupos-grid">
+      @for (grupo of publicosFiltrados(); track grupo.id) {
+        <div class="grupo-card">
+
+          <div class="grupo-card-header">
+            @if (getImagenUrl(grupo.imagen); as imgUrl) {
+              <img [src]="imgUrl" class="grupo-avatar-img" alt="{{ grupo.nombre }}"
+                   (error)="$any($event.target).style.display='none'" />
+            } @else {
+              <div class="grupo-avatar">{{ grupo.nombre.charAt(0).toUpperCase() }}</div>
+            }
+            <div class="grupo-info">
+              <p class="grupo-nombre">{{ grupo.nombre }}</p>
+              @if (grupo.descripcion) {
+                <p class="grupo-desc">{{ truncar(grupo.descripcion) }}</p>
+              }
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="grupo-tipo-badge"
+                  [class.badge-publico]="grupo.tipo === 'PUBLICO'"
+                  [class.badge-privado]="grupo.tipo !== 'PUBLICO'">
+              {{ grupo.tipo === 'PUBLICO' ? 'Público' : 'Privado' }}
+            </span>
+            <span class="grupo-meta">
+              <mat-icon>group</mat-icon>
+              {{ grupo.totalMiembros ?? 0 }} miembros
+            </span>
+          </div>
+
+          <div class="grupo-acciones">
+            @if (yaSoyMiembro(grupo)) {
+              <button class="btn-accion btn-accion--disabled">
+                <mat-icon>check_circle</mat-icon>
+                Ya eres miembro
+              </button>
+            } @else {
+              <button class="btn-accion btn-accion--primary"
+                      [disabled]="uniendose() === grupo.id"
+                      (click)="unirse(grupo)">
+                @if (uniendose() === grupo.id) {
+                  <mat-progress-spinner diameter="14" mode="indeterminate" />
+                } @else {
+                  <mat-icon>person_add</mat-icon>
+                  Unirse
+                }
+              </button>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+}
+
+<!-- ── Tab 1: Mis grupos ─────────────────── -->
+@if (tabActiva() === 1) {
+
+  @if (!misGrupos().length) {
+    <div class="empty-state">
+      <mat-icon>group_off</mat-icon>
+      <p>No perteneces a ningún grupo aún.</p>
+      <button mat-stroked-button color="primary" (click)="tabActiva.set(0)">
+        Explorar directorio
+      </button>
+    </div>
+  } @else {
+    <div class="grupos-grid">
+      @for (grupo of misGrupos(); track grupo.id) {
+        <div class="grupo-card">
+
+          <div class="grupo-card-header">
+            @if (getImagenUrl(grupo.imagen); as imgUrl) {
+              <img [src]="imgUrl" class="grupo-avatar-img" alt="{{ grupo.nombre }}"
+                   (error)="$any($event.target).style.display='none'" />
+            } @else {
+              <div class="grupo-avatar">{{ grupo.nombre.charAt(0).toUpperCase() }}</div>
+            }
+            <div class="grupo-info">
+              <p class="grupo-nombre">{{ grupo.nombre }}</p>
+              @if (grupo.descripcion) {
+                <p class="grupo-desc">{{ truncar(grupo.descripcion) }}</p>
+              }
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="grupo-tipo-badge"
+                  [class.badge-publico]="grupo.tipo === 'PUBLICO'"
+                  [class.badge-privado]="grupo.tipo !== 'PUBLICO'">
+              {{ grupo.tipo === 'PUBLICO' ? 'Público' : 'Privado' }}
+            </span>
+            <span class="grupo-meta">
+              <mat-icon>group</mat-icon>
+              {{ grupo.totalMiembros ?? 0 }} miembros
+            </span>
+          </div>
+
+          <div class="grupo-acciones">
+            <button class="btn-accion" (click)="abrirPanelMiembros(grupo.id)">
+              <mat-icon>group</mat-icon>
+              {{ panelMiembrosAbierto() === grupo.id ? 'Cerrar miembros' : 'Miembros' }}
+            </button>
+            @if (esUnicoAdmin(grupo.id)) {
+              <span class="solo-admin-aviso" title="Eres el único admin. Promueve a otro primero.">
+                No puedes salir (único admin)
+              </span>
+            } @else {
+              <button class="btn-accion btn-accion--danger" (click)="salirDeGrupo(grupo)">
+                Salir del grupo
+              </button>
+            }
+            <button class="btn-accion" (click)="abrirChat(grupo.id)">
+              <mat-icon>{{ grupoAbierto() === grupo.id ? 'close' : 'chat' }}</mat-icon>
+              {{ grupoAbierto() === grupo.id ? 'Cerrar chat' : 'Ver mensajes' }}
+            </button>
+          </div>
+
+          @if (panelMiembrosAbierto() === grupo.id) {
+            <div class="panel-miembros">
+              <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <button class="tab-btn" [class.tab-btn--activo]="panelMiembrosTab() === 'MIEMBROS'" (click)="panelMiembrosTab.set('MIEMBROS')">
+                  Miembros ({{ miembrosGrupo().length }})
+                </button>
+                <button class="tab-btn" [class.tab-btn--activo]="panelMiembrosTab() === 'HISTORIAL'" (click)="panelMiembrosTab.set('HISTORIAL')">
+                  Historial
+                </button>
+              </div>
+
+              @if (panelMiembrosTab() === 'MIEMBROS') {
+                <!-- Buscador de miembros -->
+              <mat-form-field appearance="outline" style="width: 100%; margin-bottom: 12px; margin-top: 8px;">
+                <mat-label>Buscar miembro por nombre...</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput [ngModel]="busquedaMiembros()" (ngModelChange)="busquedaMiembros.set($event)" placeholder="Ej: Juan Perez" />
+              </mat-form-field>
+
+              @for (miembro of miembrosGrupoFiltrados(); track miembro.id) {
+                <div class="miembro-fila">
+                  <span class="badge-rol"
+                        [class.badge-admin]="miembro.rol === 'ADMIN'"
+                        [class.badge-miembro]="miembro.rol !== 'ADMIN'">
+                    {{ miembro.rol }}
+                  </span>
+                  <div style="display: flex; flex-direction: column;">
+                    <span class="miembro-id">{{ resolverNombre(miembro.usuarioId) }}</span>
+                    <span style="font-size: 11px; color: #6b7280;">Se unió el {{ miembro.fechaUnion | date:'mediumDate' }}</span>
+                  </div>
+                  @if (miembro.bloqueado) {
+                    <span class="badge-bloqueado">Bloqueado</span>
+                  }
+                  @if (esAdmin(grupo.id) && miembro.usuarioId !== userId && !miembro.bloqueado) {
+                    <div class="miembro-acciones">
+                      @if (miembro.rol === 'MIEMBRO') {
+                        <button class="btn-accion"
+                                [disabled]="accionando() === 'promover-' + miembro.usuarioId"
+                                (click)="promoverMiembro(grupo.id, miembro.usuarioId)">
+                          Promover
+                        </button>
+                      }
+                      <button class="btn-accion btn-accion--danger"
+                              [disabled]="accionando() === 'remover-' + miembro.usuarioId"
+                              (click)="removerMiembro(grupo.id, miembro.usuarioId)">
+                        Remover
+                      </button>
+                      <button class="btn-accion"
+                              [disabled]="accionando() === 'bloquear-' + miembro.usuarioId"
+                              (click)="bloquearMiembro(grupo.id, miembro.usuarioId)">
+                        Bloquear
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+              } @else {
+                <!-- HISTORIAL TAB -->
+                <div class="historial-lista">
+                  @if (!historialLogs().length) {
+                    <p style="text-align: center; color: #6b7280; padding: 20px;">No hay cambios registrados en este grupo.</p>
+                  } @else {
+                    @for (log of historialLogs(); track log.id) {
+                      <div class="miembro-fila" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <div>
+                          <strong style="color: #111827;">{{ log.objetivoNombres || 'Usuario' }} {{ log.objetivoApellidos || '' }}</strong>
+                          <span style="color: #374151; font-weight: 500;">
+                            @switch (log.accion) {
+                              @case ('AGREGADO') { fue agregado }
+                              @case ('REMOVIDO') { fue removido }
+                              @case ('PROMOVIDO') { fue promovido a admin }
+                              @case ('BLOQUEADO') { fue bloqueado }
+                              @case ('SALIO') { salió del grupo }
+                              @default { {{ log.accion }} }
+                            }
+                          </span>
+                          <span style="color: #6b7280;"> por {{ log.actorNombres || 'Usuario' }} {{ log.actorApellidos || '' }}</span>
+                        </div>
+                        <span style="font-size: 11px; color: #9ca3af;">{{ log.fecha | date:'medium' }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          @if (grupoAbierto() === grupo.id) {
+            <div class="panel-chat">
+              <div class="chat-header">
+                @if (getImagenUrl(grupo.imagen); as imgUrl) {
+                  <img [src]="imgUrl" class="chat-header-img" alt="{{ grupo.nombre }}"
+                       (error)="$any($event.target).style.display='none'" />
+                } @else {
+                  <div class="chat-header-avatar">{{ grupo.nombre.charAt(0).toUpperCase() }}</div>
+                }
+                <span class="chat-header-nombre">{{ grupo.nombre }}</span>
+                @if (esAdmin(grupo.id)) {
+                  <span class="chat-header-badge">Admin</span>
+                }
+              </div>
+              <div class="chat-mensajes-grupo">
+                @if (!historialGrupo().length) {
+                  <p class="chat-vacio">Aún no hay mensajes en este grupo.</p>
+                } @else {
+                  @for (msg of historialGrupo(); track msg.id) {
+                    <div class="msg-grupo-item" [class.msg-eliminado-wrap]="msg.deletedByAdmin">
+                      <div class="msg-grupo-body">
+                        <p class="msg-grupo-remitente">{{ resolverNombre(msg.remitenteId) }}</p>
+                        @if (msg.deletedByAdmin) {
+                          <p class="msg-eliminado">
+                            <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle">block</mat-icon>
+                            Mensaje eliminado por un administrador
+                          </p>
+                        } @else {
+                          <p class="msg-grupo-texto">{{ msg.contenido }}</p>
+                        }
+                        <span class="msg-grupo-hora">{{ msg.createdAt | date:'shortTime' }}</span>
+                      </div>
+                      @if (esAdmin(grupo.id) && !msg.deletedByAdmin) {
+                        <button class="btn-eliminar-msg"
+                                title="Eliminar mensaje"
+                                (click)="eliminarMensajeGrupo(grupo.id, msg.id)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+              <div class="chat-input-grupo">
+                <input class="input-grupo"
+                       type="text"
+                       placeholder="Escribe un mensaje…"
+                       [ngModel]="mensajeGrupo()"
+                       (ngModelChange)="mensajeGrupo.set($event)"
+                       (keydown.enter)="enviarMensajeGrupo(grupo.id)" />
+                <button class="btn-enviar-grupo"
+                        [disabled]="enviandoMensajeGrupo()"
+                        (click)="enviarMensajeGrupo(grupo.id)">
+                  Enviar
+                </button>
+              </div>
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+  }
+
+}

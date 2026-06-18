@@ -1,0 +1,126 @@
+<div class="page-header">
+  <h1>Buses</h1>
+  <p>Flota de vehículos por empresa</p>
+</div>
+
+<input #fotoInput type="file" accept="image/*" style="display:none" (change)="onFotoSelected($event)">
+
+<div class="action-bar">
+  <span class="count">{{ buses().length }} bus(es)</span>
+  @if (!esSoloLectura()) {
+    <button mat-flat-button color="primary" (click)="openNew()">
+      <mat-icon>add</mat-icon> Nuevo bus
+    </button>
+  }
+</div>
+
+@if (showForm()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ editingId() ? 'Editar bus' : 'Nuevo bus' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Placa *</mat-label>
+          <input matInput formControlName="placa" maxlength="15">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Modelo *</mat-label>
+          <input matInput formControlName="modelo" maxlength="80">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Año * (1980–2027)</mat-label>
+          <input matInput type="number" formControlName="anio" min="1980" max="2027">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Capacidad máx. pasajeros * (1–300)</mat-label>
+          <input matInput type="number" formControlName="capacidadMaximaPasajeros" min="1" max="300">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Capacidad sentados * (0–300)</mat-label>
+          <input matInput type="number" formControlName="capacidadSentados" min="0" max="300">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Capacidad parados * (0–300)</mat-label>
+          <input matInput type="number" formControlName="capacidadParados" min="0" max="300">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Estado *</mat-label>
+          <mat-select formControlName="estado">
+            @for (e of estados; track e) {
+              <mat-option [value]="e">{{ e }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancel()">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="save()">
+        {{ editingId() ? 'Actualizar' : 'Crear' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+<mat-card>
+  <mat-card-content style="padding:0">
+    <table mat-table [dataSource]="buses()" class="full-width">
+      <ng-container matColumnDef="foto">
+        <th mat-header-cell *matHeaderCellDef>Foto</th>
+        <td mat-cell *matCellDef="let b" style="width:60px;padding:4px 8px">
+          @if (getFotoUrl(b)) {
+            <img [src]="getFotoUrl(b)!" alt="" width="50" height="50"
+                 style="object-fit:cover;border-radius:4px"
+                 (error)="onImgError($event)">
+          } @else {
+            <mat-icon style="font-size:36px;width:36px;height:36px;color:#9e9e9e">directions_bus</mat-icon>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="placa">
+        <th mat-header-cell *matHeaderCellDef>Placa</th>
+        <td mat-cell *matCellDef="let b"><b>{{ b.placa }}</b></td>
+      </ng-container>
+      <ng-container matColumnDef="modelo">
+        <th mat-header-cell *matHeaderCellDef>Modelo</th>
+        <td mat-cell *matCellDef="let b">{{ b.modelo }}</td>
+      </ng-container>
+      <ng-container matColumnDef="anio">
+        <th mat-header-cell *matHeaderCellDef>Año</th>
+        <td mat-cell *matCellDef="let b">{{ b.anio }}</td>
+      </ng-container>
+      <ng-container matColumnDef="capacidadMaximaPasajeros">
+        <th mat-header-cell *matHeaderCellDef>Capacidad</th>
+        <td mat-cell *matCellDef="let b">{{ b.capacidadMaximaPasajeros }}</td>
+      </ng-container>
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let b">
+          <span [class]="b.estado | estadoBadge">{{ b.estado }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="qr">
+        <th mat-header-cell *matHeaderCellDef>QR</th>
+        <td mat-cell *matCellDef="let b" style="width:48px;padding:4px 8px">
+          <button mat-icon-button matTooltip="Ver código QR" (click)="openQr(b)">
+            <mat-icon>qr_code</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let b">
+          @if (!esSoloLectura()) {
+            <button mat-icon-button matTooltip="Subir foto" (click)="triggerFoto(b.id!)"><mat-icon>photo_camera</mat-icon></button>
+            <button mat-icon-button matTooltip="Editar" (click)="openEdit(b)"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="delete(b)"><mat-icon>delete</mat-icon></button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

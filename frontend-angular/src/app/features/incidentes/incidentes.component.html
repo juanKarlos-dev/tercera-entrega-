@@ -1,0 +1,197 @@
+<div class="page-header">
+  <h1>Incidentes</h1>
+  <p>Registro y seguimiento de eventos ocurridos durante los turnos</p>
+</div>
+
+<mat-tab-group>
+  @if (!esSupervisor()) {
+  <mat-tab label="Crear Incidente">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-header><mat-card-title>Nuevo incidente</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="form" class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo *</mat-label>
+              <mat-select formControlName="tipo">
+                @for (t of tipos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Gravedad *</mat-label>
+              <mat-select formControlName="gravedad">
+                @for (g of gravedades; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="col-2">
+              <mat-label>Descripción *</mat-label>
+              <textarea matInput formControlName="descripcion" rows="3"></textarea>
+            </mat-form-field>
+            
+            <div class="col-2" style="background:rgba(0,0,255,0.05);padding:1rem;border-radius:8px;display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+              <mat-icon style="color:#0066ff">schedule</mat-icon>
+              <div>
+                <strong style="display:block;color:#333">Retraso estimado automático</strong>
+                <span style="font-size:1.1rem;color:#0066ff;font-weight:500">{{ retrasoAutomatico() }} minutos</span>
+              </div>
+            </div>
+            
+          </form>
+          <div class="foto-section">
+            <p class="hint"><mat-icon style="font-size:15px;vertical-align:middle">photo_camera</mat-icon> Adjuntar fotografías (máx. 5)</p>
+            <input type="file" accept="image/*" multiple (change)="onFotosSelected($event)" style="display:none" #fotoInput>
+            <button mat-stroked-button (click)="fotoInput.click()">
+              <mat-icon>attach_file</mat-icon> Seleccionar fotos
+            </button>
+            @if (fotos().length) {
+              <span class="foto-count">{{ fotos().length }} foto(s) seleccionada(s)</span>
+            }
+          </div>
+          @if (turnoActivo()) {
+            <p class="turno-hint turno-hint--ok">
+              <mat-icon style="font-size:15px;vertical-align:middle">directions_bus</mat-icon>
+              El incidente se asociará automáticamente al bus de tu turno activo
+              <strong>({{ turnoActivo()!.bus?.placa ?? 'sin placa' }})</strong>
+            </p>
+          } @else {
+            <p class="turno-hint turno-hint--warn">
+              <mat-icon style="font-size:15px;vertical-align:middle">warning</mat-icon>
+              No se detectó un turno activo. Asegúrate de tener un turno en curso antes de registrar un incidente.
+            </p>
+          }
+          <p class="gps-hint"><mat-icon style="font-size:15px;vertical-align:middle">gps_fixed</mat-icon> Se capturará la ubicación GPS automáticamente al crear</p>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary" [disabled]="form.invalid || capturandoGps()" (click)="crear()">
+            <mat-icon>{{ capturandoGps() ? 'hourglass_empty' : 'report_problem' }}</mat-icon>
+            {{ capturandoGps() ? 'Capturando GPS...' : 'Crear Incidente' }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </mat-tab>
+  }
+
+  <mat-tab label="Listar / Buscar">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content>
+          <div class="search-bar">
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Filtrar por bus</mat-label>
+              <mat-select [ngModel]="busIdBusqueda()" (ngModelChange)="onBusFilter($event)">
+                <mat-option [value]="null">— Selecciona un bus —</mat-option>
+                @for (b of buses(); track b.id) { <mat-option [value]="b.id">{{ b.placa }} — {{ b.modelo }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card style="margin-top:1rem">
+        <mat-card-content style="padding:0">
+          <table mat-table [dataSource]="incidentes()" class="full-width">
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let i"><b>{{ i.tipo }}</b></td>
+            </ng-container>
+            <ng-container matColumnDef="gravedad">
+              <th mat-header-cell *matHeaderCellDef>Gravedad</th>
+              <td mat-cell *matCellDef="let i">{{ i.gravedad }}</td>
+            </ng-container>
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef>Descripción</th>
+              <td mat-cell *matCellDef="let i" class="desc-cell">{{ i.descripcion }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let i">
+                <span [class]="i.estado | estadoBadge">{{ i.estado }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="comentario">
+              <th mat-header-cell *matHeaderCellDef>Comentario empresa</th>
+              <td mat-cell *matCellDef="let i" class="comentario-cell">
+                @if (i.comentarioSeguimiento) {
+                  <span class="comentario-texto">{{ i.comentarioSeguimiento }}</span>
+                } @else {
+                  <span class="comentario-vacio">—</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="fotografias">
+              <th mat-header-cell *matHeaderCellDef>Fotos</th>
+              <td mat-cell *matCellDef="let i">
+                @if (i.fotografias?.length) {
+                  <div style="display:flex;gap:4px;flex-wrap:wrap">
+                    @for (f of i.fotografias; track f) {
+                      <img [src]="fotoUrl(f)" alt="foto"
+                           class="foto-thumb"
+                           (click)="abrirLightbox(i.fotografias, f)">
+                    }
+                  </div>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let i">
+                <button mat-icon-button matTooltip="Agregar comentario" (click)="incidenteParaComentario.set(i); comentario.set(i.comentarioSeguimiento ?? ''); nuevoEstado.set(i.estado ?? '')">
+                  <mat-icon>comment</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      @if (incidenteParaComentario()) {
+        <mat-card style="margin-top:1rem">
+          <mat-card-header><mat-card-title>Comentario de empresa — Incidente #{{ incidenteParaComentario()!.id }}</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <div class="comentario-form-grid">
+              <mat-form-field appearance="outline" style="width:100%">
+                <mat-label>Comentario de seguimiento</mat-label>
+                <textarea matInput [ngModel]="comentario()" (ngModelChange)="comentario.set($event)" rows="3"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Cambiar estado</mat-label>
+                <mat-select [ngModel]="nuevoEstado()" (ngModelChange)="nuevoEstado.set($event)">
+                  <mat-option value="PENDIENTE">PENDIENTE</mat-option>
+                  <mat-option value="EN_REVISION">EN_REVISION</mat-option>
+                  <mat-option value="RESUELTO">RESUELTO</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-button (click)="incidenteParaComentario.set(null)">Cancelar</button>
+            <button mat-flat-button color="primary" (click)="guardarComentario()">Guardar</button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+@if (fotoSeleccionada()) {
+  <div class="lightbox-overlay" (click)="cerrarLightbox()">
+    <button class="lightbox-close" (click)="cerrarLightbox()">
+      <mat-icon>close</mat-icon>
+    </button>
+    @if (fotosActuales().length > 1) {
+      <button class="lightbox-nav lightbox-prev" (click)="$event.stopPropagation(); fotoAnterior()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button class="lightbox-nav lightbox-next" (click)="$event.stopPropagation(); fotoSiguiente()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    }
+    <img class="lightbox-img" [src]="fotoSeleccionada()!" alt="foto" (click)="$event.stopPropagation()">
+    @if (fotosActuales().length > 1) {
+      <div class="lightbox-counter">{{ fotoIndex() + 1 }} / {{ fotosActuales().length }}</div>
+    }
+  </div>
+}

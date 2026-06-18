@@ -1,0 +1,409 @@
+<!-- ── Header ─────────────────────────────── -->
+<div class="trk-header">
+  <div class="trk-header__left">
+    <div class="trk-header__icon">🛰</div>
+    <div>
+      <h1 class="trk-header__title">Seguimiento en Tiempo Real</h1>
+      <p class="trk-header__sub">Ubicación de buses activos por ruta · simulación GPS</p>
+    </div>
+  </div>
+  <div class="trk-header__actions">
+    @if (ultimaActualizacion()) {
+      <span class="trk-badge trk-badge--update">
+        @if (cargando()) {
+          <mat-progress-spinner diameter="12" mode="indeterminate" />
+        } @else {
+          <mat-icon class="trk-icon-sm">sync</mat-icon>
+        }
+        Hace {{ segundosDesdeActual() }}s
+      </span>
+    }
+    <button class="trk-btn trk-btn--ghost" (click)="abrirVistaAlerta()">
+      <mat-icon>notifications_active</mat-icon>
+      Alerta bus próximo
+    </button>
+    <button class="trk-btn trk-btn--demo" (click)="lanzarDemo()" [disabled]="lanzandoDemo()">
+      @if (lanzandoDemo()) {
+        <mat-progress-spinner diameter="16" mode="indeterminate" />
+      } @else {
+        <mat-icon>play_circle</mat-icon>
+      }
+      Iniciar Demo
+    </button>
+  </div>
+</div>
+
+<!-- ── Banner demo resultado ─────────────── -->
+@if (mensajeDemo()) {
+  <div class="trk-demo-banner" [class.trk-demo-banner--ok]="demoOk()" [class.trk-demo-banner--warn]="!demoOk()">
+    <mat-icon>{{ demoOk() ? 'directions_bus' : 'warning' }}</mat-icon>
+    <span>{{ mensajeDemo() }}</span>
+    <button class="trk-banner-close" (click)="cerrarDemo()"><mat-icon>close</mat-icon></button>
+  </div>
+}
+
+<!-- ── Banner de retraso ─────────────── -->
+@if (busesConRetrasoActivo().length > 0 && !alertaBannerCerrado()) {
+  <div class="trk-alert-banner">
+    <mat-icon>warning_amber</mat-icon>
+    <div class="trk-alert-banner__text">
+      <strong>Retraso detectado</strong>
+      <span>⚠️ Alerta: {{ mensajeAlertaRetraso(busesConRetrasoActivo()[0]) }}</span>
+    </div>
+    <button class="trk-banner-close" (click)="cerrarBanner()"><mat-icon>close</mat-icon></button>
+  </div>
+}
+
+<!-- ── Alertas WebSocket ───────────────── -->
+@for (alerta of alertasRetraso(); track alerta.busId) {
+  <div class="trk-ws-alerta">
+    <mat-icon>bus_alert</mat-icon>
+    <span>🚨 <strong>{{ alerta.placa }}</strong> — {{ alerta.mensaje }}</span>
+    <button class="trk-banner-close" (click)="cerrarAlerta(alerta.busId)"><mat-icon>close</mat-icon></button>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════ -->
+<!-- Grid principal                          -->
+<!-- ═══════════════════════════════════════ -->
+<div class="trk-grid">
+
+  <!-- ── COLUMNA IZQUIERDA ─────────────── -->
+  <div class="trk-col-left">
+
+    <!-- Selectores de ruta -->
+    <div class="trk-card">
+      <div class="trk-card__header">
+        <mat-icon>route</mat-icon>
+        <span>Seleccionar Ruta</span>
+      </div>
+      <div class="trk-toggle-row">
+        <mat-slide-toggle [checked]="soloRutasActivas()" (change)="toggleSoloRutasActivas($event.checked)" color="primary" />
+        <span class="trk-toggle-label">Solo rutas activas</span>
+      </div>
+      <mat-form-field appearance="outline" class="trk-full-w">
+        <mat-label>Ruta</mat-label>
+        <mat-select [ngModel]="rutaSeleccionada()" (ngModelChange)="onRutaChange($event)">
+          <mat-option [value]="null">— Selecciona una ruta —</mat-option>
+          @for (r of rutas(); track r.id) {
+            <mat-option [value]="r">{{ r.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (rutaSeleccionada() && paraderosDeLaRuta().length > 0) {
+        <mat-form-field appearance="outline" class="trk-full-w">
+          <mat-label>Mi paradero de espera</mat-label>
+          <mat-select [ngModel]="paraderoEspera()" (ngModelChange)="paraderoEspera.set($event)">
+            @for (p of paraderosDeLaRuta(); track p.paraderoId) {
+              <mat-option [value]="p">{{ p.orden }}. {{ p.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+
+    <!-- ETA grande -->
+    @if (paraderoEspera() && rutaSeleccionada()) {
+      <div class="trk-card trk-card--eta">
+        <div class="trk-eta-label">
+          <mat-icon>schedule</mat-icon>
+          Próximo bus en
+        </div>
+        <div class="trk-eta-value">
+          @if (etaDisplay() !== null) {
+            <span class="trk-eta-num">{{ etaDisplay()! | number:'1.0-0' }}</span>
+            <span class="trk-eta-unit">min</span>
+          } @else {
+            <span class="trk-eta-wait">Calculando…</span>
+          }
+        </div>
+        @if (horaEstimada()) {
+          <div class="trk-eta-hora">Llegada aprox. {{ horaEstimada() | date:'HH:mm' }}</div>
+        }
+        @if (etaMenor()) {
+          <div class="trk-eta-bus">
+            🚌 Bus <strong>{{ etaMenor()!.bus.placa }}</strong>
+          </div>
+        }
+        <div class="trk-eta-paradero">
+          📍 Esperando en: <strong>{{ paraderoEspera()!.nombre }}</strong>
+        </div>
+      </div>
+    }
+
+    <!-- Lista de buses activos -->
+    @if (rutaSeleccionada()) {
+      <div class="trk-card">
+        <div class="trk-card__header">
+          <mat-icon>directions_bus</mat-icon>
+          <span>Buses en Ruta</span>
+          <span class="trk-count-badge">{{ busesActivos().length }}</span>
+        </div>
+
+        @if (cargando() && busesActivos().length === 0) {
+          <div class="trk-loading-row">
+            <mat-progress-spinner diameter="24" mode="indeterminate" />
+            <span>Cargando buses…</span>
+          </div>
+        }
+
+        @if (!cargando() && busesActivos().length === 0) {
+          <div class="trk-empty">
+            <mat-icon>search_off</mat-icon>
+            <p>Sin buses activos en esta ruta.</p>
+            <button class="trk-btn trk-btn--demo" (click)="lanzarDemo()">
+              <mat-icon>play_circle</mat-icon> Iniciar Demo
+            </button>
+          </div>
+        }
+
+        @for (bus of busesActivos(); track bus.busId) {
+          <div class="trk-bus-item"
+               [class.trk-bus-item--sel]="busSeleccionado()?.busId === bus.busId"
+               [class.trk-bus-item--ret]="bus.retrasado"
+               (click)="seleccionarBus(bus)">
+            <div class="trk-bus-icon" [class.trk-bus-icon--ret]="bus.retrasado">
+              {{ bus.retrasado ? '⚠️' : '🚌' }}
+            </div>
+            <div class="trk-bus-info">
+              <div class="trk-bus-placa">{{ bus.placa }}</div>
+              <div class="trk-bus-para">
+                {{ bus.paraderoMasCercano?.nombre ?? 'Sin ubicación' }}
+              </div>
+            </div>
+            <div class="trk-bus-eta">
+              <span class="trk-bus-eta-val" [class.trk-bus-eta-val--ret]="calcularTiempoLlegada(bus, paraderoEspera()) > 10">
+                {{ formatTiempo(bus) }}
+              </span>
+              @if (bus.retrasado) {
+                <div class="trk-bus-delay-badge" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;margin-top:4px;gap:2px">
+                  <span>Estado: Retrasado</span>
+                  <span>Retraso: +{{ bus.minutosRetraso }} min</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── MAPA ───────────────────────────── -->
+  <div class="trk-map-wrapper">
+    <div id="tracking-map" class="trk-map"></div>
+    @if (!rutaSeleccionada()) {
+      <div class="trk-map-overlay">
+        <div class="trk-map-overlay__content">
+          <mat-icon class="trk-map-overlay__icon">map</mat-icon>
+          <p>Selecciona una ruta para ver los buses en el mapa</p>
+        </div>
+      </div>
+    }
+    <button class="trk-map-refresh" (click)="refreshBuses()" mat-icon-button matTooltip="Actualizar">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <!-- ── COLUMNA DERECHA ────────────────── -->
+  <div class="trk-col-right">
+
+    <!-- Detalle de bus seleccionado -->
+    @if (busSeleccionado()) {
+      <div class="trk-card trk-card--detail">
+        <div class="trk-card__header">
+          <mat-icon>info</mat-icon>
+          <span>Detalle del Bus</span>
+          <button class="trk-icon-close" (click)="cerrarDetalle()"><mat-icon>close</mat-icon></button>
+        </div>
+        <div class="trk-detail-body">
+          <div class="trk-detail-placa">🚌 {{ busSeleccionado()!.placa }}</div>
+
+          <!-- Paradero más cercano al bus actual -->
+          <div class="trk-nearest-stop-card">
+            <div class="trk-nearest-stop-card__header">
+              <mat-icon>location_on</mat-icon>
+              <span>Paradero más cercano al bus actual</span>
+            </div>
+            @if (busSeleccionado()!.paraderoMasCercano) {
+              <div class="trk-nearest-stop-card__name">{{ busSeleccionado()!.paraderoMasCercano!.nombre }}</div>
+              @if (busSeleccionado()!.paraderoMasCercano!.distanciaMetros != null) {
+                <div class="trk-nearest-stop-card__dist">Distancia: {{ busSeleccionado()!.paraderoMasCercano!.distanciaMetros }} m</div>
+              }
+            } @else {
+              <div class="trk-nearest-stop-card__name">—</div>
+            }
+          </div>
+
+          <!-- Mi paradero de espera -->
+          <div class="trk-detail-row">
+            <mat-icon>person_pin_circle</mat-icon>
+            Mi paradero de espera: <strong>{{ paraderoEspera()?.nombre ?? '—' }}</strong>
+          </div>
+
+          <!-- Próximo paradero según ruta -->
+          <div class="trk-detail-row">
+            <mat-icon>arrow_forward</mat-icon>
+            Próximo paradero según ruta: {{ getProximoParadero(busSeleccionado()!) }}
+          </div>
+
+          @if (etaDetailDisplay() !== null) {
+            <div class="trk-detail-eta">
+              ⏱ ETA a mi paradero: <strong>{{ etaDetailDisplay()! | number:'1.0-0' }} min</strong>
+              ({{ horaLlegada(etaDetailDisplay()!) }})
+            </div>
+          }
+          @if (busSeleccionado()!.retrasado) {
+            <div class="trk-detail-delay">
+              <div class="trk-detail-delay__title">🚨 RETRASO DETECTADO</div>
+              <div class="trk-detail-delay__msg">Retraso acumulado: {{ busSeleccionado()!.minutosRetraso }} min</div>
+              @if (busSeleccionado()!.activeIncidentsCount) {
+                <div class="trk-detail-delay__msg">Incidentes activos: {{ busSeleccionado()!.activeIncidentsCount }}</div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Paraderos de la ruta -->
+    @if (paraderosDeLaRuta().length > 0) {
+      <div class="trk-card">
+        <div class="trk-card__header">
+          <mat-icon>place</mat-icon>
+          <span>Paraderos</span>
+          <span class="trk-count-badge">{{ paraderosDeLaRuta().length }}</span>
+        </div>
+        <div class="trk-paraderos-list">
+          @for (p of paraderosDeLaRuta(); track p.paraderoId) {
+            <div class="trk-paradero-item"
+                 [class.trk-paradero-item--sel]="paraderoEspera()?.paraderoId === p.paraderoId"
+                 (click)="paraderoEspera.set(p)">
+              <div class="trk-paradero-num">{{ p.orden }}</div>
+              <div class="trk-paradero-info">
+                <div class="trk-paradero-nombre">{{ p.nombre }}</div>
+                @if (p.tiempoEstimadoDesdeAnteriorMinutos) {
+                  <div class="trk-paradero-tiempo">+{{ p.tiempoEstimadoDesdeAnteriorMinutos }} min</div>
+                }
+              </div>
+              @if (esParaderoMasCercanoAlgunBus(p.paraderoId)) {
+                <span class="trk-badge-nearest">Más cercano al bus ✅</span>
+              }
+              @if (paraderoEspera()?.paraderoId === p.paraderoId) {
+                <mat-icon class="trk-paradero-check">check_circle</mat-icon>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ETAs por bus -->
+    @if (etasBuses().length > 0) {
+      <div class="trk-card">
+        <div class="trk-card__header">
+          <mat-icon>timer</mat-icon>
+          <span>ETAs confirmadas</span>
+        </div>
+        @for (e of etasBuses(); track e.busId) {
+          <div class="trk-eta-row" [class.trk-eta-row--ret]="e.retrasado">
+            <span class="trk-eta-row-placa">🚌 {{ e.placa }}</span>
+            <span class="trk-eta-row-val">{{ e.tiempoLlegadaMinutos }} min</span>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── ALERTA INTERNA FLOTANTE (BUS CERCA) ─────────── -->
+@if (alertaInterna()) {
+  <div class="trk-internal-toast">
+    <div class="trk-internal-toast__header">
+      <div class="trk-internal-toast__title">
+        <mat-icon style="vertical-align: middle; color: #ff9800; margin-right: 4px;">directions_bus</mat-icon>
+        <strong>Tu bus está cerca</strong>
+      </div>
+      <button class="trk-icon-close" (click)="cerrarAlertaInterna()"><mat-icon>close</mat-icon></button>
+    </div>
+    <div class="trk-internal-toast__body">
+      <p><strong>Ruta:</strong> {{ alertaInterna()!.rutaNombre }}</p>
+      <p><strong>Bus:</strong> {{ alertaInterna()!.placa }}</p>
+      <p><strong>Paradero:</strong> {{ alertaInterna()!.paraderoNombre }}</p>
+      <p><strong>Llega en:</strong> <span class="trk-internal-toast__eta">{{ alertaInterna()!.eta }} min</span></p>
+    </div>
+    <div class="trk-internal-toast__actions">
+      <button mat-stroked-button color="primary" (click)="verBusEnVivo(alertaInterna()!.busId)">Ver bus en vivo</button>
+      <button mat-flat-button color="primary" (click)="prepararPago()">Preparar pago</button>
+    </div>
+  </div>
+}
+
+<!-- ── MODAL ALERTA BUS PRÓXIMO ─────────── -->
+@if (mostrarVistaAlerta()) {
+  <div class="trk-modal-overlay" (click)="cerrarVistaAlerta()">
+    <div class="trk-modal" (click)="$event.stopPropagation()">
+      <div class="trk-modal__header">
+        <mat-icon>notifications_active</mat-icon>
+        <span>Notificación de Bus Próximo</span>
+        <button class="trk-icon-close" (click)="cerrarVistaAlerta()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="trk-modal__body">
+        @if (!suscripcionKey()) {
+          <p class="trk-modal__desc">
+            Te avisaremos con una notificación push cuando el bus esté cerca de tu paradero.
+          </p>
+          <div class="trk-minutos-row">
+            <label>Anticipación (minutos)</label>
+            <div class="trk-minutos-btns">
+              @for (min of [5, 10, 15]; track min) {
+                <button class="trk-min-btn" [class.trk-min-btn--sel]="minutosAlerta() === min" (click)="minutosAlerta.set(min)">
+                  {{ min }} min
+                </button>
+              }
+            </div>
+          </div>
+          <div class="trk-modal__info">
+            📍 Paradero: <strong>{{ paraderoEspera()?.nombre ?? 'No seleccionado' }}</strong>
+          </div>
+          <div class="trk-modal__info">
+            <strong>Permiso de notificaciones</strong><br>
+            @if (estadoPermisoPush() === 'default') {
+              Necesitamos tu permiso para enviarte notificaciones push del navegador.
+              <button class="trk-btn trk-btn--ghost trk-full-w" style="margin-top: 8px;" (click)="solicitarPermisoPush()">
+                <mat-icon>notifications_active</mat-icon> Permitir notificaciones push
+              </button>
+            } @else if (estadoPermisoPush() === 'granted') {
+              <span style="color: #22c55e;">✅ Notificaciones push activadas</span>
+            } @else {
+              <span style="color: #ef4444;">❌ No se concedió permiso para notificaciones push. Aun así, mostraremos una alerta dentro de la aplicación.</span>
+            }
+          </div>
+          <button class="trk-btn trk-btn--primary trk-full-w"
+                  (click)="suscribirAlerta()"
+                  [disabled]="suscribiendose() || !paraderoEspera()">
+            @if (suscribiendose()) {
+              <mat-progress-spinner diameter="18" mode="indeterminate" />
+            } @else {
+              <mat-icon>notifications</mat-icon>
+            }
+            Activar alerta push
+          </button>
+        } @else {
+          <div class="trk-alert-active">
+            <div class="trk-alert-active__icon">✅</div>
+            <div class="trk-alert-active__text">
+              <strong>Alerta activa</strong>
+              <p>Te avisaremos cuando el bus esté a {{ minutosAlerta() }} minutos de {{ paraderoEspera()?.nombre }}.</p>
+            </div>
+          </div>
+          <button class="trk-btn trk-btn--danger trk-full-w" (click)="cancelarAlerta()">
+            <mat-icon>notifications_off</mat-icon>
+            Cancelar alerta
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

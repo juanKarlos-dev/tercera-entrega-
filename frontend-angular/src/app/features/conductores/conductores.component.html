@@ -1,0 +1,113 @@
+<div class="page-header">
+  <h1>Conductores</h1>
+  <p>Personal de conducción registrado</p>
+</div>
+
+<div class="action-bar">
+  <span class="count">{{ conductores().length }} conductor(es)</span>
+  @if (!esSoloLectura()) {
+    <button mat-flat-button color="primary" (click)="openNew()">
+      <mat-icon>add</mat-icon> Nuevo conductor
+    </button>
+  }
+</div>
+
+@if (showForm()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ editingId() ? 'Editar conductor' : 'Nuevo conductor' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombres *</mat-label>
+          <input matInput formControlName="nombres">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Apellidos *</mat-label>
+          <input matInput formControlName="apellidos">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo documento</mat-label>
+          <mat-select formControlName="tipoDocumento">
+            @for (t of tiposDocumento; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>N° documento</mat-label>
+          <input matInput formControlName="numeroDocumento">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>N° licencia</mat-label>
+          <input matInput formControlName="numeroLicencia">
+        </mat-form-field>
+        <div class="datetime-group">
+          <span style="display:block;font-size:11px;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:4px;">Vencimiento licencia</span>
+          <div class="picker-anchor">
+            <input [matDatepicker]="pickerVenc" formControlName="fechaVencimientoLicencia" readonly>
+            <mat-datepicker #pickerVenc></mat-datepicker>
+          </div>
+          <div class="dt-block" (click)="pickerVenc.open()">
+            <div class="dt-date-section">
+              <span class="dt-weekday">
+                {{ getNombreDia(form.get('fechaVencimientoLicencia')?.value) || 'Día de la semana' }}
+              </span>
+              <span class="dt-date-main" [class.dt-placeholder]="!form.get('fechaVencimientoLicencia')?.value">
+                {{ getNombreFecha(form.get('fechaVencimientoLicencia')?.value) || 'Seleccionar fecha…' }}
+              </span>
+            </div>
+            <mat-icon style="color:#9e9e9e;font-size:20px">calendar_today</mat-icon>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancel()">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="save()">
+        {{ editingId() ? 'Actualizar' : 'Crear' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+<mat-card>
+  <mat-card-content style="padding:0">
+    <table mat-table [dataSource]="conductores()" class="full-width">
+      <ng-container matColumnDef="nombres">
+        <th mat-header-cell *matHeaderCellDef>Nombres</th>
+        <td mat-cell *matCellDef="let c"><b>{{ c.persona?.nombres }}</b></td>
+      </ng-container>
+      <ng-container matColumnDef="apellidos">
+        <th mat-header-cell *matHeaderCellDef>Apellidos</th>
+        <td mat-cell *matCellDef="let c">{{ c.persona?.apellidos }}</td>
+      </ng-container>
+      <ng-container matColumnDef="tipoDocumento">
+        <th mat-header-cell *matHeaderCellDef>Tipo doc.</th>
+        <td mat-cell *matCellDef="let c">{{ c.persona?.tipoDocumento }}</td>
+      </ng-container>
+      <ng-container matColumnDef="numeroDocumento">
+        <th mat-header-cell *matHeaderCellDef>N° documento</th>
+        <td mat-cell *matCellDef="let c">{{ c.persona?.numeroDocumento }}</td>
+      </ng-container>
+      <ng-container matColumnDef="numeroLicencia">
+        <th mat-header-cell *matHeaderCellDef>N° licencia</th>
+        <td mat-cell *matCellDef="let c">{{ c.numeroLicencia }}</td>
+      </ng-container>
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let c">
+          @if (!esSoloLectura()) {
+            <button mat-icon-button (click)="openEdit(c)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" (click)="delete(c)" matTooltip="Eliminar"><mat-icon>delete</mat-icon></button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

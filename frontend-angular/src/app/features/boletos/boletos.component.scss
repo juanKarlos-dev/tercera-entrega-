@@ -1,0 +1,58 @@
+.tab-content { padding: 1.5rem 0; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; .col-2 { grid-column: span 2; } }
+.full-width { width: 100%; }
+
+.recorrido-panel {
+  .recorrido-header-meta {
+    display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;
+    margin-left: auto; font-size: 0.875rem; color: #475569;
+    span { display: flex; align-items: center; gap: 0.25rem; }
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+}
+
+.recorrido-lista {
+  list-style: none; margin: 0.5rem 0 0; padding: 0;
+  li {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.875rem;
+    &.abordaje { background: #dcfce7; }
+    &.descenso { background: #fee2e2; }
+    &:not(.abordaje):not(.descenso):hover { background: #f8fafc; }
+  }
+  .recorrido-orden { width: 22px; text-align: right; color: #94a3b8; font-size: 0.78rem; }
+  .recorrido-dot { font-size: 18px; width: 18px; height: 18px; color: #cbd5e1; }
+  .recorrido-nombre { flex: 1; font-weight: 500; }
+  .recorrido-meta { color: #94a3b8; font-size: 0.78rem; white-space: nowrap; }
+  .recorrido-badge {
+    font-size: 0.7rem; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; white-space: nowrap;
+    &.abordaje-badge { background: #bbf7d0; color: #166534; }
+    &.descenso-badge { background: #fecaca; color: #991b1b; }
+  }
+}
+
+.confirmacion-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #dcfce7, #f0fdf4);
+  border: 1px solid #86efac;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+
+  .confirmacion-icon mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #22c55e;
+  }
+
+  .confirmacion-texto {
+    flex: 1;
+    h2 { margin: 0 0 0.25rem; color: #166534; font-size: 1.1rem; }
+    p { margin: 0; color: #15803d; }
+    strong { font-size: 1.1rem; }
+  }
+}

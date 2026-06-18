@@ -1,0 +1,150 @@
+.form-card, .mapa-card { margin-bottom: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.full-width { width: 100%; }
+.count { color: #64748b; font-size: 0.9rem; }
+
+.paraderos-drop-list {
+  min-height: 60px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.paradero-drag-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.4rem;
+  cursor: default;
+  .paradero-num {
+    width: 24px; height: 24px;
+    background: #2d3ef0;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .paradero-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .paradero-nombre { font-size: 0.9rem; font-weight: 500; }
+  .paradero-dist { font-size: 0.75rem; color: #94a3b8; }
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  border-radius: 10px;
+}
+
+.empty-hint { color: #94a3b8; font-size: 0.875rem; text-align: center; padding: 1rem; }
+
+.ruta-tabla-wrap {
+  margin-top: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ruta-mapa-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+
+  thead tr { background: #f8fafc; }
+
+  th {
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  td {
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr.first-stop .stop-badge { background: #22c55e; }
+  tr.last-stop  .stop-badge { background: #ef4444; }
+
+  .stop-badge {
+    width: 26px; height: 26px;
+    background: #2d3ef0;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .stop-name { font-weight: 500; }
+}
+
+.section-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.5rem 0;
+  color: #1e1b4b;
+  font-size: 1rem;
+  font-weight: 600;
+  mat-icon { font-size: 1.1rem; height: 1.1rem; width: 1.1rem; }
+}
+
+.paraderos-secuencia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.seq-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  .seq-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    background: #2d3ef0;
+    color: white;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .seq-nombre { font-weight: 500; color: #1e293b; }
+  .seq-tiempo { color: #64748b; font-size: 0.8rem; }
+}
+
+.seq-arrow { color: #94a3b8; font-weight: 300; }

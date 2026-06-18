@@ -1,0 +1,24 @@
+.form-card { margin-bottom: 1.5rem; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+  .col-2 { grid-column: span 2; }
+}
+.full-width { width: 100%; }
+.count { color: #64748b; font-size: 0.9rem; }
+.bus-thumb {
+  width: 48px; height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+.bus-thumb-placeholder {
+  width: 48px; height: 48px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  mat-icon { color: #94a3b8; }
+}

@@ -1,0 +1,102 @@
+<h1 class="title">Perfil y seguridad</h1>
+
+@if (loadingUser()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<mat-card class="block">
+  <h2>Cuenta</h2>
+  <mat-divider />
+  <mat-list>
+    <mat-list-item>
+      <span matListItemTitle>Correo</span>
+      <span matListItemLine>{{ userRecord()?.email ?? payload()?.email }}</span>
+    </mat-list-item>
+    <mat-list-item>
+      <span matListItemTitle>Nombre</span>
+      <span matListItemLine>{{ userRecord()?.name ?? payload()?.name }}</span>
+    </mat-list-item>
+    <mat-list-item>
+      <span matListItemTitle>Apellido</span>
+      <span matListItemLine>{{ userRecord()?.lastname || '—' }}</span>
+    </mat-list-item>
+    @if (payload()?.username) {
+      <mat-list-item>
+        <span matListItemTitle>Usuario GitHub</span>
+        <span matListItemLine>&#64;{{ payload()?.username }}</span>
+      </mat-list-item>
+    }
+    <mat-list-item>
+      <span matListItemTitle>Estado</span>
+      <span matListItemLine>{{ estadoLabel() }}</span>
+    </mat-list-item>
+    <mat-list-item class="roles-item">
+      <span matListItemTitle>Roles asignados</span>
+      <div matListItemLine class="roles-container">
+        <mat-chip-set>
+          @for (role of roles(); track role) {
+            <mat-chip class="role-chip">{{ role }}</mat-chip>
+          } @empty {
+            <span class="no-roles">Sin roles asignados</span>
+          }
+        </mat-chip-set>
+      </div>
+    </mat-list-item>
+  </mat-list>
+  <mat-divider />
+  <p class="muted"><a routerLink="/dashboard">Volver al panel</a></p>
+</mat-card>
+
+<mat-card class="block">
+  <h2>Proveedores OAuth</h2>
+  <p class="muted">
+    El backend solo permite desvincular si la cuenta tiene contraseña local. Los errores del servidor se muestran en
+    notificación.
+  </p>
+  <div class="row">
+    <button mat-stroked-button color="primary" type="button" (click)="unlinkGoogle()" [disabled]="busy">
+      Desvincular Google
+    </button>
+    <button mat-stroked-button color="primary" type="button" (click)="unlinkGithub()" [disabled]="busy">
+      Desvincular GitHub
+    </button>
+  </div>
+
+  @if (ciudadanoRecord()) {
+    <mat-card class="profile-card">
+      <mat-card-header>
+        <div mat-card-avatar class="header-icon">
+          <mat-icon color="primary">cloud</mat-icon>
+        </div>
+        <mat-card-title>Alertas de Clima (6:00 AM)</mat-card-title>
+        <mat-card-subtitle>Recibe un correo diario si hay alta probabilidad de lluvia</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="weather-alert-section">
+          <mat-slide-toggle [ngModel]="alertaClima()" (ngModelChange)="alertaClima.set($event)" color="primary">
+            Activar alertas de clima
+          </mat-slide-toggle>
+
+          @if (alertaClima()) {
+            <mat-form-field appearance="outline" style="width: 100%; margin-top: 1rem;">
+              <mat-label>Horario habitual de viaje</mat-label>
+              <input matInput type="time" [ngModel]="horarioViaje()" (ngModelChange)="horarioViaje.set($event)" required>
+              <mat-hint>Recibirás el correo 2 horas antes de tu viaje</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width: 100%; margin-top: 1rem;">
+              <mat-label>Email para alertas</mat-label>
+              <input matInput [ngModel]="emailAlerta()" (ngModelChange)="emailAlerta.set($event)" placeholder="usuario@ejemplo.com" type="email">
+              <mat-hint>Si lo dejas en blanco se usará tu correo principal</mat-hint>
+            </mat-form-field>
+          }
+        </div>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-raised-button color="primary" [disabled]="busy" (click)="guardarAlertasClima()">
+          Guardar Preferencias
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+</mat-card>

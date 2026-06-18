@@ -1,0 +1,96 @@
+<div class="login-container">
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <mat-icon>directions_bus</mat-icon>
+      </div>
+      <div class="logo-text">
+        <span class="brand">TransporteYA</span>
+        <span class="tagline">Un solo sistema, todos los roles.</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="login-main">
+    <!-- Illustration in background -->
+    <div class="background-illustration">
+      <img src="/bus-illustration.png" alt="Bus Illustration" class="bus-img">
+    </div>
+
+    <section class="form-section centered">
+      <div class="login-card tfa-card">
+        <div class="tfa-header">
+          <div class="tfa-icon-container">
+            <mat-icon>security</mat-icon>
+          </div>
+          <h2 class="card-title">Verificación 2FA</h2>
+          <p class="card-subtitle">
+            Ingresa el código de 6 dígitos enviado a tu correo <br>
+            @if (maskedEmail) {
+              <span class="masked-email">
+                <mat-icon>mail</mat-icon>
+                {{ maskedEmail }}
+              </span>
+            }
+          </p>
+        </div>
+
+        <form (ngSubmit)="verify()" [formGroup]="form" class="tfa-form">
+          <div class="code-inputs">
+            @for (i of [0,1,2,3,4,5]; track i) {
+              <input 
+                type="text" 
+                maxlength="1" 
+                inputmode="numeric" 
+                class="code-input"
+                [attr.data-index]="i"
+                (input)="onInputDigit($event, i)"
+                (keydown)="onKeyDownDigit($event, i)"
+                (paste)="onPaste($event)"
+                #digitInput
+              >
+            }
+          </div>
+
+          <div class="tfa-info">
+            <div class="info-item" [class.expired]="codeExpired()">
+              <mat-icon>schedule</mat-icon>
+              @if (codeExpired()) {
+                <span>El código expiró. Solicita uno nuevo.</span>
+              } @else {
+                <span>El código expira en: <strong>{{ remainingTimeStr() }}</strong></span>
+              }
+            </div>
+            <div class="info-item">
+              <mat-icon>verified_user</mat-icon>
+              <span>Intentos restantes: <strong>{{ attemptsRemaining() }}</strong></span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" [disabled]="busy || codeExpired()">
+            @if (busy) {
+              <span>Verificando...</span>
+            } @else {
+              <span>Verificar código</span>
+            }
+          </button>
+
+          <button type="button" class="btn-resend" (click)="resend()" [disabled]="busy">
+            <mat-icon>refresh</mat-icon>
+            <span>Reenviar código</span>
+          </button>
+        </form>
+
+        <div class="security-footer-box">
+          <mat-icon>info</mat-icon>
+          <p>Por tu seguridad, si no completas la verificación, tu sesión será invalidada.</p>
+        </div>
+        
+        <div class="cancel-link">
+          <a (click)="cancel()">Cancelar y volver al inicio</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

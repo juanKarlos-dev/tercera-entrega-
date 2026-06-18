@@ -1,0 +1,118 @@
+<div class="permissions-view-container">
+  <header class="page-header">
+    <div class="title-group">
+      <h1 class="page-title">Catálogo de Permisos</h1>
+      <p class="page-subtitle">
+        Acciones del sistema agrupadas por módulo funcional. Los detalles HTTP quedan opcionales.
+      </p>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" class="loading-bar"></mat-progress-bar>
+  }
+
+  <mat-tab-group class="permissions-tabs">
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">view_list</mat-icon>
+        Catálogo por módulo
+      </ng-template>
+
+      <div class="tab-content catalog-view">
+        <div class="catalog-toolbar">
+          <mat-slide-toggle [checked]="showTechnical()" (change)="showTechnical.set($event.checked)" color="primary">
+            Mostrar detalles técnicos
+          </mat-slide-toggle>
+        </div>
+
+        <div class="groups-grid">
+          @for (group of groups(); track group.module) {
+            <mat-card class="group-card">
+              <div class="group-header">
+                <div class="icon-box">
+                  <mat-icon>{{ getIcon(group.module) }}</mat-icon>
+                </div>
+                <div class="header-text">
+                  <h3>{{ getLabel(group.module) }}</h3>
+                  <span class="count">{{ group.permissions.length }} acciones</span>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="permissions-list">
+                @for (perm of group.permissions; track perm.id) {
+                  <div class="permission-row">
+                    <span class="friendly">{{ catalogLabel(perm, group.module) }}</span>
+                    @if (showTechnical()) {
+                      <div class="technical-line">
+                        <span class="method" [class]="(perm.method || '').toLowerCase()">{{ perm.method }}</span>
+                        <span class="url" [matTooltip]="perm.url || ''">{{ perm.url }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </mat-card>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">grid_on</mat-icon>
+        Vista de matriz
+      </ng-template>
+
+      <div class="tab-content matrix-view">
+        <mat-card class="matrix-card">
+          <div class="matrix-info">
+            <mat-icon>info</mat-icon>
+            <p>
+              Solo informativa: indica si el rol tiene al menos un permiso en ese módulo funcional.
+              @if (canManageRolePermissions()) {
+                Para editar, abre <a routerLink="/roles">Roles</a> → <strong>Gestionar permisos</strong>.
+              }
+            </p>
+          </div>
+
+          <div class="table-container">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th>Módulo</th>
+                  @for (role of matrixRoles(); track role.id) {
+                    <th>{{ role.name }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (mod of matrixModules(); track mod) {
+                  <tr>
+                    <td class="module-cell">
+                      <mat-icon>{{ getIcon(mod) }}</mat-icon>
+                      {{ getLabel(mod) }}
+                    </td>
+                    @for (role of matrixRoles(); track role.id) {
+                      <td class="state-cell">
+                        @if (matrixHit(mod, role.id)) {
+                          <mat-icon class="check-icon" matTooltip="Hay al menos un permiso en este módulo"
+                            >check_circle</mat-icon
+                          >
+                        } @else {
+                          <span class="dash">—</span>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

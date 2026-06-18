@@ -1,0 +1,180 @@
+.sidebar-container {
+  height: 100%;
+  background-color: #0f172a; // Deep Navy
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  width: 270px;
+}
+
+.sidebar-header {
+  padding: 2rem 1.5rem;
+  
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .logo-box {
+      background: #2d3ef0; // Vibrant Blue
+      color: white;
+      padding: 0.5rem;
+      border-radius: 12px;
+      display: flex;
+      mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      .brand { font-size: 1.25rem; font-weight: 800; color: white; letter-spacing: -0.5px; line-height: 1.2; }
+      .module-name { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    }
+  }
+}
+
+.context-selectors {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.5rem;
+
+  .ctx-field {
+    width: 100%;
+
+    ::ng-deep {
+      .mat-mdc-text-field-wrapper {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+      }
+      .mat-mdc-floating-label { color: #64748b !important; }
+      .mat-mdc-select-value-text { color: white; }
+      .mat-mdc-select-arrow { color: #64748b; }
+      .mdc-line-ripple::before { border-bottom-color: rgba(255, 255, 255, 0.1); }
+      .mdc-line-ripple::after { border-bottom-color: #2d3ef0; }
+    }
+  }
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0 1rem;
+
+  .nav-divider {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #475569;
+    padding: 1.5rem 1rem 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    color: #94a3b8;
+    text-decoration: none;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    mat-icon { font-size: 22px; width: 22px; height: 22px; }
+
+    &:hover:not(.disabled) {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      transform: translateX(4px);
+    }
+
+    &.active {
+      background: #2d3ef0;
+      color: white;
+      box-shadow: 0 10px 20px rgba(45, 62, 240, 0.2);
+      
+      mat-icon { color: white; }
+    }
+
+    &.disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      .profile-icon { color: #f8fafc; }
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      background: #1e293b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #2d3ef0;
+      border: 2px solid rgba(45, 62, 240, 0.2);
+    }
+
+    .user-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      .name { font-size: 0.9rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .role {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 500;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    .profile-icon { font-size: 20px; color: #475569; transition: color 0.2s; flex-shrink: 0; }
+  }
+
+  .logout-btn {
+    flex-shrink: 0;
+    color: #64748b;
+    &:hover { color: #f87171 !important; }
+  }
+}

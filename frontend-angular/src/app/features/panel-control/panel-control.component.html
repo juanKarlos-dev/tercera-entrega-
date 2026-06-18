@@ -1,0 +1,350 @@
+<!-- ── Header ─────────────────────────────────────── -->
+<div class="pnl-header">
+  <div class="pnl-header__left">
+    <div class="pnl-header__icon">📡</div>
+    <div>
+      <h1 class="pnl-header__title">Panel de Control</h1>
+      <p class="pnl-header__sub">Monitoreo en tiempo real de toda la flota</p>
+    </div>
+  </div>
+  <div class="pnl-header__actions">
+    <!-- Badge tiempo real (actualizado por WebSocket) -->
+    @if (busesEnMapa() > 0) {
+      <span class="pnl-badge pnl-badge--realtime" title="Buses visibles en el mapa (actualización WebSocket cada ~12s)">
+        <span class="pnl-pulse"></span>
+        {{ busesEnMapa() }} en mapa
+      </span>
+    }
+    @if (ultimaActualizacion()) {
+      <span class="pnl-badge">
+        <mat-icon class="pnl-icon-sm">sync</mat-icon>
+        Actualizado hace {{ segundosDesde() }}s
+      </span>
+    }
+    <button class="pnl-btn pnl-btn--ghost" (click)="cargar()" [disabled]="cargando()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+    <button class="pnl-btn pnl-btn--accent" (click)="abrirDialogAlerta()">
+      <mat-icon>campaign</mat-icon>
+      Alerta Masiva
+    </button>
+  </div>
+</div>
+
+<!-- ── Barra estado flota ──────────────────────────── -->
+@if (buses().length > 0 || busesEnMapa() > 0) {
+  <div class="pnl-fleet-bar">
+    <div class="pnl-fleet-stat pnl-fleet-stat--normal">
+      <div class="pnl-fleet-dot pnl-fleet-dot--normal"></div>
+      <span class="pnl-fleet-num">{{ resumenFlota().normal }}</span>
+      <span class="pnl-fleet-label">Normal</span>
+    </div>
+    <div class="pnl-fleet-stat pnl-fleet-stat--lleno">
+      <div class="pnl-fleet-dot pnl-fleet-dot--lleno"></div>
+      <span class="pnl-fleet-num">{{ resumenFlota().lleno }}</span>
+      <span class="pnl-fleet-label">Lleno</span>
+    </div>
+    <div class="pnl-fleet-stat pnl-fleet-stat--inc">
+      <div class="pnl-fleet-dot pnl-fleet-dot--inc"></div>
+      <span class="pnl-fleet-num">{{ resumenFlota().incidente }}</span>
+      <span class="pnl-fleet-label">Incidente</span>
+    </div>
+    <div class="pnl-fleet-divider"></div>
+    <div class="pnl-fleet-total">
+      <mat-icon>directions_bus</mat-icon>
+      <!-- Muestra el mayor de: buses del polling HTTP o buses detectados por WS -->
+      <strong>{{ busesEnMapa() > buses().length ? busesEnMapa() : buses().length }}</strong> buses activos
+      @if (busesEnMapa() > 0) {
+        <span class="pnl-ws-indicator" title="Buses detectados en tiempo real por WebSocket">
+          · 🟢 {{ busesEnMapa() }} en mapa
+        </span>
+      }
+    </div>
+    @if (estadisticas()) {
+      <p class="pnl-summary__desc">
+        Hay <strong>{{ estadisticas()!.busesActivos }}</strong> operando en tiempo real con 
+        <strong>{{ estadisticas()!.pasajerosEnTransito }}</strong> pasajeros en tránsito.
+      </p>
+    }
+  </div>
+}
+
+<!-- ── Grid principal ─────────────────────────────── -->
+<div class="pnl-grid">
+
+  <!-- ── IZQUIERDA: Métricas + Lista buses ──────── -->
+  <div class="pnl-col-left">
+
+    <!-- Métricas rápidas -->
+    @if (estadisticas()) {
+      <div class="pnl-metrics-row">
+        <div class="pnl-metric pnl-metric--buses">
+          <div class="pnl-metric__icon pnl-metric__icon--blue"><mat-icon>directions_bus</mat-icon></div>
+          <div class="pnl-metric__info">
+            <div class="pnl-metric__val">{{ estadisticas()!.busesActivos }}</div>
+            <div class="pnl-metric__lbl">Buses Activos</div>
+          </div>
+        </div>
+        <div class="pnl-metric pnl-metric--pax">
+          <div class="pnl-metric__icon pnl-metric__icon--green"><mat-icon>people</mat-icon></div>
+          <div class="pnl-metric__info">
+            <div class="pnl-metric__val">{{ estadisticas()!.pasajerosEnTransito }}</div>
+            <div class="pnl-metric__lbl">Pasajeros Hoy</div>
+          </div>
+        </div>
+        <div class="pnl-metric pnl-metric--inc">
+          <div class="pnl-metric__icon pnl-metric__icon--red"><mat-icon>warning</mat-icon></div>
+          <div class="pnl-metric__info">
+            <div class="pnl-metric__val">{{ estadisticas()!.incidentesActivos }}</div>
+            <div class="pnl-metric__lbl">Incidentes</div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Spinner de carga -->
+    @if (cargando() && buses().length === 0) {
+      <div class="pnl-loading">
+        <mat-progress-spinner diameter="32" mode="indeterminate" />
+        <span>Cargando datos de la flota…</span>
+      </div>
+    }
+
+    <!-- Lista de buses -->
+    @if (buses().length > 0) {
+      <div class="pnl-card">
+        <div class="pnl-card__header">
+          <mat-icon>list</mat-icon>
+          <span>Buses en Operación</span>
+          <span class="pnl-count-badge">{{ buses().length }}</span>
+        </div>
+        @for (bus of buses(); track bus.busId) {
+          <div class="pnl-bus-row"
+               [class.pnl-bus-row--inc]="bus.estado === 'incidente'"
+               [class.pnl-bus-row--lleno]="bus.estado === 'lleno'"
+               [class.pnl-bus-row--sel]="busSeleccionado()?.busId === bus.busId"
+               (click)="seleccionarBus(bus)">
+            <div class="pnl-bus-status-dot"
+                 [class.pnl-status--normal]="bus.estado === 'normal'"
+                 [class.pnl-status--inc]="bus.estado === 'incidente'"
+                 [class.pnl-status--lleno]="bus.estado === 'lleno'">
+            </div>
+            <div class="pnl-bus-info">
+              <div class="pnl-bus-placa">
+                {{ bus.estado === 'incidente' ? '🔴' : bus.estado === 'lleno' ? '🟠' : '🟢' }}
+                {{ bus.placa }}
+                @if (bus.rutaNombre) {
+                  <span class="pnl-bus-ruta">· {{ bus.rutaNombre }}</span>
+                }
+              </div>
+              <div class="pnl-bus-sub">
+                {{ bus.conductor }}
+                @if (bus.empresa) { · {{ bus.empresa }} }
+              </div>
+            </div>
+            <div class="pnl-bus-occ">
+              <div class="pnl-occ-bar">
+                <div class="pnl-occ-fill"
+                     [style.width.%]="bus.porcentajeOcupacion"
+                     [class.pnl-occ-fill--ok]="bus.porcentajeOcupacion < 80"
+                     [class.pnl-occ-fill--warn]="bus.porcentajeOcupacion >= 80 && bus.porcentajeOcupacion < 100"
+                     [class.pnl-occ-fill--full]="bus.porcentajeOcupacion >= 100">
+                </div>
+              </div>
+              <span class="pnl-occ-pct">{{ bus.porcentajeOcupacion }}%</span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Buses con alta ocupación -->
+    @if (busesOcupados().length > 0) {
+      <div class="pnl-card pnl-card--warn">
+        <div class="pnl-card__header">
+          <mat-icon>warning_amber</mat-icon>
+          <span>Ocupación Máxima</span>
+          <span class="pnl-count-badge pnl-count-badge--warn">{{ busesOcupados().length }}</span>
+        </div>
+        @for (bus of busesOcupados(); track bus.busId) {
+          <div class="pnl-full-bus">
+            🟠 <strong>{{ bus.placa }}</strong>
+            <span>{{ bus.pasajerosActivos }}/{{ bus.capacidadMaxima }} pasajeros</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── CENTRO: Mapa ────────────────────────────── -->
+  <div class="pnl-map-wrapper">
+    <div id="panel-map" class="pnl-map"></div>
+    @if (busSeleccionado()) {
+      <div class="pnl-map-detail">
+        <div class="pnl-map-detail__header">
+          <strong>
+            {{ busSeleccionado()!.estado === 'incidente' ? '🔴' : busSeleccionado()!.estado === 'lleno' ? '🟠' : '🟢' }}
+            {{ busSeleccionado()!.placa }}
+          </strong>
+          <button class="pnl-close-btn" (click)="cerrarDetalleBus()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        @if (busSeleccionado()!.rutaNombre) {
+          <div>📍 Ruta: {{ busSeleccionado()!.rutaNombre }}</div>
+        }
+        <div>👤 {{ busSeleccionado()!.conductor }}</div>
+        <div>🚌 {{ busSeleccionado()!.pasajerosActivos }}/{{ busSeleccionado()!.capacidadMaxima }} pasajeros ({{ busSeleccionado()!.porcentajeOcupacion }}%)</div>
+        @if (busSeleccionado()!.incidentesActivos.length > 0) {
+          <div class="pnl-map-detail__inc">⚠️ {{ busSeleccionado()!.incidentesActivos.length }} incidente(s) activo(s)</div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ── DERECHA: Incidentes ────────────────────── -->
+  <div class="pnl-col-right">
+
+    @if (incidentesOrdenados().length === 0 && !cargando()) {
+      <div class="pnl-card pnl-no-inc">
+        <mat-icon>check_circle</mat-icon>
+        <p>Sin incidentes activos</p>
+      </div>
+    }
+
+    @if (incidentesOrdenados().length > 0) {
+      <div class="pnl-card">
+        <div class="pnl-card__header">
+          <mat-icon>report_problem</mat-icon>
+          <span>Incidentes Activos</span>
+          <span class="pnl-count-badge pnl-count-badge--red">{{ incidentesOrdenados().length }}</span>
+        </div>
+
+        @for (inc of incidentesOrdenados(); track inc.id) {
+          <div class="pnl-inc-item" [class.pnl-inc-item--open]="incidenteExpandidoId() === inc.id">
+            <div class="pnl-inc-top" (click)="toggleIncidente(inc.id)">
+              <span [class]="gravedadBadgeClass(inc.gravedad)">{{ inc.gravedad }}</span>
+              <div class="pnl-inc-hdr">
+                <div class="pnl-inc-tipo">
+                  <mat-icon>{{ iconoIncidente(inc.tipo || 'OTRO') }}</mat-icon>
+                  <span>{{ inc.tipo }}</span>
+                </div>
+                <div class="pnl-inc-time">{{ tiempoAtras(inc.fechaCreacion) }}</div>
+              </div>
+              <mat-icon class="pnl-inc-chevron">
+                {{ incidenteExpandidoId() === inc.id ? 'expand_less' : 'expand_more' }}
+              </mat-icon>
+            </div>
+            @if (incidenteExpandidoId() === inc.id) {
+              <div class="pnl-inc-body">
+                <p>{{ inc.descripcion }}</p>
+                @if (inc.turno?.conductor?.persona) {
+                  <div class="pnl-inc-conductor">
+                    👤 {{ inc.turno!.conductor!.persona!.nombres }} {{ inc.turno!.conductor!.persona!.apellidos }}
+                  </div>
+                }
+                <button class="pnl-btn pnl-btn--resolve" (click)="resolverIncidente(inc.id!)">
+                  <mat-icon>check</mat-icon>
+                  Marcar resuelto
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Modal Alerta Masiva ──────────────────────── -->
+@if (mostrarDialogAlerta()) {
+  <div class="pnl-modal-overlay" (click)="cerrarDialogAlerta()">
+    <div class="pnl-modal" (click)="$event.stopPropagation()">
+      <div class="pnl-modal__header">
+        <mat-icon>campaign</mat-icon>
+        <span>Enviar Alerta Masiva</span>
+        <button class="pnl-icon-close" (click)="cerrarDialogAlerta()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="pnl-modal__body">
+        <div class="pnl-field-group" style="display: flex; gap: 16px; margin-bottom: 12px;">
+          <div class="pnl-field" style="flex: 1;">
+            <label>Alcance</label>
+            <select class="pnl-input" [ngModel]="alertaAlcance()" (ngModelChange)="onAlcanceChange($event)">
+              <option value="TODOS">Toda la Flota (Todos los usuarios)</option>
+              <option value="RUTA">Por Ruta Específica</option>
+              <option value="ZONA">Por Zona Específica</option>
+            </select>
+          </div>
+          <div class="pnl-field" style="flex: 1;">
+            <label>Programar Envío (Opcional)</label>
+            <input class="pnl-input" type="datetime-local" [ngModel]="alertaScheduledAt()" (ngModelChange)="alertaScheduledAt.set($event)" />
+          </div>
+        </div>
+
+        @if (alertaAlcance() === 'RUTA') {
+          <div class="pnl-field">
+            <label>Seleccionar Ruta</label>
+            <select class="pnl-input" [ngModel]="alertaRutaId()" (ngModelChange)="alertaRutaId.set($event); actualizarContadorDestinatarios()">
+              <option [ngValue]="null">— Selecciona una ruta —</option>
+              @for (r of rutasActivas(); track r.id) {
+                <option [ngValue]="r.id">{{ r.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+        @if (alertaAlcance() === 'ZONA') {
+          <div class="pnl-field">
+            <label>Seleccionar Zona</label>
+            <select class="pnl-input" [ngModel]="alertaZonaId()" (ngModelChange)="alertaZonaId.set($event); actualizarContadorDestinatarios()">
+              <option [ngValue]="null">— Selecciona una zona —</option>
+              @for (z of zonasActivas(); track z.id) {
+                <option [ngValue]="z.id">{{ z.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="pnl-destinatarios-info" style="margin-bottom: 16px; font-size: 0.85rem; color: var(--pnl-accent);">
+          <mat-icon style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">group</mat-icon>
+          @if (alertaTotalDest() === null) {
+            Calculando destinatarios...
+          } @else {
+            <strong>{{ alertaTotalDest() }}</strong> destinatarios recibirán esta alerta.
+          }
+        </div>
+        <div class="pnl-field">
+          <label>Asunto</label>
+          <input class="pnl-input" type="text"
+                 [ngModel]="alertaAsunto()" (ngModelChange)="alertaAsunto.set($event)"
+                 placeholder="Título de la alerta" />
+        </div>
+        <div class="pnl-field">
+          <label>Mensaje</label>
+          <textarea class="pnl-input pnl-textarea"
+                    [ngModel]="alertaMensaje()" (ngModelChange)="alertaMensaje.set($event)"
+                    placeholder="Describe la situación..."
+                    rows="4"></textarea>
+        </div>
+        <div class="pnl-urgente-row">
+          <mat-checkbox color="warn"
+                        [checked]="alertaUrgente()"
+                        (change)="alertaUrgente.set($event.checked)">
+            Marcar como <strong>URGENTE</strong> (genera notificación push inmediata)
+          </mat-checkbox>
+        </div>
+        <div class="pnl-modal__footer">
+          <button class="pnl-btn pnl-btn--ghost" (click)="cerrarDialogAlerta()">Cancelar</button>
+          <button class="pnl-btn pnl-btn--accent" (click)="enviarAlertaMasiva()" [disabled]="enviandoAlerta()">
+            @if (enviandoAlerta()) {
+              <mat-progress-spinner diameter="16" mode="indeterminate" />
+            } @else {
+              <mat-icon>send</mat-icon>
+            }
+            Enviar Alerta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

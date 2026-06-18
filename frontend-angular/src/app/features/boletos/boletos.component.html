@@ -1,0 +1,252 @@
+<div class="page-header">
+  <h1>Boletos</h1>
+  <p>Registro de abordajes y descensos de ciudadanos</p>
+</div>
+
+@if (confirmacion()) {
+  <div class="confirmacion-banner">
+    <div class="confirmacion-icon"><mat-icon>check_circle</mat-icon></div>
+    <div class="confirmacion-texto">
+      <h2>¡Abordaje exitoso!</h2>
+      <p>Tarifa cobrada: <strong>{{ confirmacion()!.data?.boleto?.tarifaAplicada | currency:'COP':'$':'1.0-0' }}</strong></p>
+      @if (confirmacion()!.data?.metodoPago?.saldoRestante != null) {
+        <p>Saldo restante: <strong>{{ confirmacion()!.data?.metodoPago?.saldoRestante | currency:'COP':'$':'1.0-0' }}</strong></p>
+      }
+    </div>
+    <button mat-icon-button (click)="cerrarConfirmacion()"><mat-icon>close</mat-icon></button>
+  </div>
+}
+
+<mat-tab-group (selectedTabChange)="$event.index === 0 && !esSoloLectura() && cargarTurnosActivos()">
+
+  @if (!esSoloLectura()) {
+    <mat-tab label="Registrar Abordaje">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Nuevo abordaje</mat-card-title>
+            <div style="margin-left:auto">
+              <button mat-icon-button (click)="cargarTurnosActivos()" matTooltip="Actualizar turnos activos">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="abordajeForm" class="form-grid">
+              @if (!esCiudadano()) {
+                <mat-form-field appearance="outline">
+                  <mat-label>Ciudadano *</mat-label>
+                  <mat-select formControlName="ciudadanoId">
+                    @for (c of ciudadanos(); track c.id) {
+                      <mat-option [value]="c.id">{{ labelCiudadano(c) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+              @if (esCiudadano() && ciudadanoPropio()) {
+                <div style="padding:8px 0;color:#555;font-size:.9rem">
+                  <mat-icon style="vertical-align:middle;margin-right:4px">person</mat-icon>
+                  Ciudadano: <strong>{{ labelCiudadano(ciudadanoPropio()!) }}</strong>
+                </div>
+              }
+              <mat-form-field appearance="outline">
+                <mat-label>Turno activo *</mat-label>
+                <mat-select (selectionChange)="onTurnoChange($event.value)">
+                  @if (!turnosEnCurso().length) {
+                    <mat-option disabled>No hay turnos activos en este momento</mat-option>
+                  }
+                  @for (t of turnosEnCurso(); track t.id) {
+                    <mat-option [value]="t.id">{{ labelTurno(t) }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Paradero de abordaje *</mat-label>
+                <mat-select formControlName="paraderoAbordajeId">
+                  @if (!paraderosDeTurno().length) {
+                    <mat-option disabled>Selecciona primero un bus activo</mat-option>
+                  }
+                  @for (p of paraderosDeTurno(); track p.paraderoId) {
+                    <mat-option [value]="p.paraderoId">{{ p.orden }}. {{ p.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Método de pago *</mat-label>
+                <mat-select formControlName="metodoPagoCiudadanoId">
+                  @for (m of metodosPago(); track m.id) {
+                    <mat-option [value]="m.id">
+                      {{ m.metodoPago?.nombre ?? m.metodoPago?.codigo }} — Saldo: $ {{ m.saldo | number }}
+                    </mat-option>
+                  }
+                  @if (!metodosPago().length) {
+                    <mat-option disabled>Selecciona primero un ciudadano</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </form>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-flat-button color="primary" [disabled]="abordajeForm.invalid" (click)="registrarAbordaje()">
+              <mat-icon>directions_bus</mat-icon> Registrar Abordaje
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+  }
+
+  @if (!esSoloLectura()) {
+    <mat-tab label="Registrar Descenso">
+      <div class="tab-content">
+        <mat-card>
+          <mat-card-header><mat-card-title>Registrar descenso</mat-card-title></mat-card-header>
+          <mat-card-content>
+            <div class="form-grid">
+              @if (!esCiudadano()) {
+                <mat-form-field appearance="outline">
+                  <mat-label>Ciudadano</mat-label>
+                  <mat-select [ngModel]="ciudadanoDescensoId()" (ngModelChange)="onCiudadanoDescensoChange($event)">
+                    <mat-option [value]="null">— Selecciona —</mat-option>
+                    @for (c of ciudadanos(); track c.id) {
+                      <mat-option [value]="c.id">{{ labelCiudadano(c) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              }
+              @if (esCiudadano() && ciudadanoPropio()) {
+                <div style="padding:8px 0;color:#555;font-size:.9rem">
+                  <mat-icon style="vertical-align:middle;margin-right:4px">person</mat-icon>
+                  Ciudadano: <strong>{{ labelCiudadano(ciudadanoPropio()!) }}</strong>
+                </div>
+              }
+              <mat-form-field appearance="outline">
+                <mat-label>Paradero de descenso</mat-label>
+                <mat-select [ngModel]="paraderoDescensoId()" (ngModelChange)="paraderoDescensoId.set($event)">
+                  @if (!paraderosDeTurnoDescenso().length) {
+                    <mat-option disabled>Selecciona primero un boleto activo</mat-option>
+                  }
+                  @for (p of paraderosDeTurnoDescenso(); track p.paraderoId) {
+                    <mat-option [value]="p.paraderoId">{{ p.orden }}. {{ p.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-flat-button color="accent" (click)="registrarDescenso()">
+              <mat-icon>exit_to_app</mat-icon> Registrar Descenso
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </mat-tab>
+  }
+
+  <mat-tab label="Historial Ciudadano">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content>
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:.5rem">
+            <button mat-icon-button (click)="cargarHistorialCiudadano()" matTooltip="Actualizar historial">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+          @if (!esCiudadano()) {
+            <mat-form-field appearance="outline" style="width:100%;margin-bottom:1rem">
+              <mat-label>Ciudadano</mat-label>
+              <mat-select [ngModel]="historialCiudadanoId()" (ngModelChange)="onHistorialCiudadanoChange($event)">
+                <mat-option [value]="null">— Selecciona —</mat-option>
+                @for (c of ciudadanos(); track c.id) {
+                  <mat-option [value]="c.id">{{ labelCiudadano(c) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+          @if (historial().length) {
+            <table mat-table [dataSource]="historial()" class="full-width">
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let b"><span [class]="b.estado | estadoBadge">{{ b.estado }}</span></td>
+              </ng-container>
+              <ng-container matColumnDef="abordaje">
+                <th mat-header-cell *matHeaderCellDef>Abordaje</th>
+                <td mat-cell *matCellDef="let b">{{ b.paraderoAbordaje?.nombre ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="descenso">
+                <th mat-header-cell *matHeaderCellDef>Descenso</th>
+                <td mat-cell *matCellDef="let b">{{ b.paraderoDescenso?.nombre ?? 'En curso' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="ruta">
+                <th mat-header-cell *matHeaderCellDef>Ruta</th>
+                <td mat-cell *matCellDef="let b">{{ b.ruta?.nombre ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="bus">
+                <th mat-header-cell *matHeaderCellDef>Bus</th>
+                <td mat-cell *matCellDef="let b">{{ b.bus?.placa ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="duracion">
+                <th mat-header-cell *matHeaderCellDef>Duración</th>
+                <td mat-cell *matCellDef="let b">{{ b.tiempoViajeMinutos != null ? (b.tiempoViajeMinutos + ' min') : '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="tarifa">
+                <th mat-header-cell *matHeaderCellDef>Tarifa</th>
+                <td mat-cell *matCellDef="let b">{{ b.tarifaAplicada | currency:'COP':'$':'1.0-0' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let b">
+                  @if (b.estado === 'COMPLETADO') {
+                    <button mat-icon-button matTooltip="Ver recorrido" (click)="verRecorrido(b)">
+                      <mat-icon>map</mat-icon>
+                    </button>
+                  }
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="histColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: histColumns;"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      @if (recorrido()) {
+        <mat-card class="recorrido-panel" style="margin-top:1rem">
+          <mat-card-header>
+            <mat-card-title>Detalle del recorrido</mat-card-title>
+            <div class="recorrido-header-meta">
+              <span><mat-icon>directions_bus</mat-icon> {{ recorrido()!.bus?.placa ?? '—' }}</span>
+              <span><mat-icon>person</mat-icon> {{ recorrido()!.conductor?.nombreCompleto ?? '—' }}</span>
+              <span><mat-icon>route</mat-icon> {{ recorrido()!.ruta?.nombre ?? '—' }}</span>
+            </div>
+          </mat-card-header>
+          <mat-card-content>
+            <ul class="recorrido-lista">
+              @for (p of recorrido()!.mapaRuta; track p.orden) {
+                <li [class.abordaje]="p.esParaderoAbordaje" [class.descenso]="p.esParaderoDescenso">
+                  <span class="recorrido-orden">{{ p.orden }}</span>
+                  <mat-icon class="recorrido-dot">
+                    {{ p.esParaderoAbordaje ? 'arrow_circle_up' : p.esParaderoDescenso ? 'arrow_circle_down' : 'radio_button_unchecked' }}
+                  </mat-icon>
+                  <span class="recorrido-nombre">{{ p.paradero?.nombre }}</span>
+                  @if (p.orden! > 1) {
+                    <span class="recorrido-meta">
+                      @if (p.distanciaDesdeAnteriorMetros) { {{ p.distanciaDesdeAnteriorMetros }} m · }
+                      @if (p.tiempoEstimadoDesdeAnteriorMinutos) { {{ p.tiempoEstimadoDesdeAnteriorMinutos }} min }
+                    </span>
+                  }
+                  @if (p.esParaderoAbordaje) { <span class="recorrido-badge abordaje-badge">Abordaje</span> }
+                  @if (p.esParaderoDescenso) { <span class="recorrido-badge descenso-badge">Descenso</span> }
+                </li>
+              }
+            </ul>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-button (click)="cerrarRecorrido()">Cerrar</button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  </mat-tab>
+
+</mat-tab-group>

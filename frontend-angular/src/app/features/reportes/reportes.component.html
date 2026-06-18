@@ -1,0 +1,96 @@
+<div class="page-header">
+  <h1>Reportes</h1>
+  <p>Análisis de ingresos, distribución etaria y tendencia de incidentes</p>
+</div>
+
+<div class="action-bar">
+  <mat-form-field appearance="outline" style="width:160px">
+    <mat-label>Período</mat-label>
+    <mat-select [ngModel]="meses()" (ngModelChange)="meses.set($event)">
+      @for (m of mesesOpciones; track m) {
+        <mat-option [value]="m">Últimos {{ m }} meses</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button mat-stroked-button (click)="cargarTodo()" [disabled]="loading()">
+    <mat-icon>refresh</mat-icon> Actualizar datos
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="loading-center">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Cargando reportes...</p>
+  </div>
+}
+
+@if (!loading()) {
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title>Ingresos por Método de Pago</mat-card-title>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="exportar('ingresos-por-metodo-pago')">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      @if (ingresos().length) {
+        <div class="chart-wrapper">
+          <canvas #ingresosChart></canvas>
+        </div>
+        <div class="table-summary">
+          @for (d of ingresos(); track d.metodo) {
+            <div class="summary-row">
+              <span>{{ d.metodo }}</span>
+              <span class="amount">$ {{ d.total | number }}</span>
+              <span class="qty">{{ d.cantidad }} transacciones</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="no-data">Sin datos disponibles</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title>Distribución Etaria de Usuarios</mat-card-title>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="exportar('distribucion-etaria')">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      @if (etaria().length) {
+        <div class="chart-wrapper doughnut">
+          <canvas #etariaChart></canvas>
+        </div>
+      } @else {
+        <p class="no-data">Sin datos disponibles</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title>Tendencia de Incidentes</mat-card-title>
+      <div class="header-actions">
+        <button mat-stroked-button (click)="exportar('tendencia-incidentes')">
+          <mat-icon>download</mat-icon> Exportar CSV
+        </button>
+      </div>
+    </mat-card-header>
+    <mat-card-content>
+      @if (tendencia().length) {
+        <div class="chart-wrapper">
+          <canvas #tendenciaChart></canvas>
+        </div>
+      } @else {
+        <p class="no-data">Sin datos disponibles</p>
+      }
+    </mat-card-content>
+  </mat-card>
+}

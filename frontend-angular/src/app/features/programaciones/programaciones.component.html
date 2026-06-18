@@ -1,0 +1,301 @@
+<div class="page-header">
+  <h1>Programaciones</h1>
+  <p>Horarios programados por recurrencia</p>
+</div>
+
+<mat-tab-group (selectedTabChange)="$event.index === 1 && !esCiudadano() && loadVisibles()">
+  @if (!esCiudadano()) {
+  <mat-tab label="Todas las programaciones">
+    <div class="tab-content">
+      <div class="action-bar">
+        <span class="count">{{ programaciones().length }} programación(es)</span>
+        @if (!esSoloLectura()) {
+          <button mat-flat-button color="primary" (click)="openNew()"><mat-icon>add</mat-icon> Nueva</button>
+        }
+      </div>
+
+      @if (showForm()) {
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>{{ editingId() ? 'Editar' : 'Nueva' }} programación</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="form" class="form-grid">
+
+              <!-- ── Fecha/hora de salida ── -->
+              <div class="datetime-group col-2">
+                <span style="display:block;font-size:11px;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:4px;">📅 FECHA/HORA DE SALIDA</span>
+                <div class="picker-anchor">
+                  <input [matDatepicker]="pickerSalida" formControlName="fechaSalida" readonly>
+                  <mat-datepicker #pickerSalida></mat-datepicker>
+                </div>
+
+                <div class="dt-block" style="border-radius:10px;padding:10px 14px" (click)="pickerSalida.open()">
+                  <div class="dt-date-section">
+                    <span class="dt-weekday">
+                      {{ getNombreDia(form.get('fechaSalida')?.value) || 'Fecha de salida *' }}
+                    </span>
+                    <span class="dt-date-main" [class.dt-placeholder]="!form.get('fechaSalida')?.value">
+                      {{ getNombreFecha(form.get('fechaSalida')?.value) || 'Seleccionar fecha…' }}
+                    </span>
+                  </div>
+
+                  <div class="dt-time-pill" (click)="$event.stopPropagation()">
+                    <!-- Horas 1-12 · 3 ítems -->
+                    <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, horas12, 'horaSalida')">
+                      @for (item of getWheelItems(horas12, form.get('horaSalida')?.value, 3); track item.offset) {
+                        <div class="wheel-item"
+                             [style.opacity]="wheelOpacity(item.offset)"
+                             [style.font-size]="wheelFontSize(item.offset)"
+                             [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                             [style.color]="item.offset === 0 ? '#111' : '#555'"
+                             (click)="onWheelItemClick(horas12, 'horaSalida', item.offset)">
+                          {{ item.label }}
+                        </div>
+                      }
+                    </div>
+                    <span class="wheel-colon">:</span>
+                    <!-- Minutos 00-59 · 3 ítems -->
+                    <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, minutosAll, 'minutoSalida')">
+                      @for (item of getWheelItems(minutosAll, form.get('minutoSalida')?.value, 3); track item.offset) {
+                        <div class="wheel-item"
+                             [style.opacity]="wheelOpacity(item.offset)"
+                             [style.font-size]="wheelFontSize(item.offset)"
+                             [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                             [style.color]="item.offset === 0 ? '#111' : '#555'"
+                             (click)="onWheelItemClick(minutosAll, 'minutoSalida', item.offset)">
+                          {{ item.label }}
+                        </div>
+                      }
+                    </div>
+                    <!-- AM/PM · 3 ítems -->
+                    <div class="wheel-col wheel-col--ampm" (wheel)="onWheelScroll($event, ampmOpts, 'ampmSalida')">
+                      @for (item of getWheelItems(ampmOpts, form.get('ampmSalida')?.value, 3); track item.offset) {
+                        <div class="wheel-item"
+                             [style.opacity]="wheelOpacity(item.offset)"
+                             [style.font-size]="wheelFontSize(item.offset)"
+                             [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                             [style.color]="item.offset === 0 ? '#111' : '#555'"
+                             (click)="onWheelItemClick(ampmOpts, 'ampmSalida', item.offset)">
+                          {{ item.label }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                @if (form.get('fechaSalida')?.invalid && form.get('fechaSalida')?.touched) {
+                  <div class="group-error">Requerido</div>
+                }
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Recurrencia *</mat-label>
+                <mat-select formControlName="tipoRecurrencia">
+                  @for (t of tiposRecurrencia; track t.value) {
+                    <mat-option [value]="t.value">{{ t.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Ruta</mat-label>
+                <mat-select formControlName="rutaId">
+                  @for (r of rutas(); track r.id) {
+                    <mat-option [value]="r.id">{{ r.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Bus</mat-label>
+                <mat-select formControlName="busId">
+                  @for (b of buses(); track b.id) {
+                    <mat-option [value]="b.id">{{ b.placa }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Separador antes de botones -->
+              <div class="col-2" style="padding-top:8px">
+                <hr style="border:none;border-top:1px solid #e0e0e0;margin:0">
+              </div>
+
+            </form>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-button (click)="cancel()">Cancelar</button>
+            <button class="btn-crear"
+                    [class.btn-crear--active]="form.valid"
+                    [disabled]="form.invalid"
+                    (click)="save()">
+              {{ editingId() ? 'Actualizar' : 'Crear' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+
+      <mat-card>
+        <mat-card-content style="padding:0">
+          <table mat-table [dataSource]="programaciones()" class="full-width">
+            <ng-container matColumnDef="fechaHoraSalida">
+              <th mat-header-cell *matHeaderCellDef>Salida</th>
+              <td mat-cell *matCellDef="let p">{{ p.fechaHoraSalida | date:'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="tipoRecurrencia">
+              <th mat-header-cell *matHeaderCellDef>Recurrencia</th>
+              <td mat-cell *matCellDef="let p"><b>{{ p.tipoRecurrencia }}</b></td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let p">
+                <span class="chip-pendiente">{{ p.estado ?? 'PROGRAMADO' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let p">
+                <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(p)"><mat-icon>info</mat-icon></button>
+                @if (!esSoloLectura()) {
+                  <button mat-icon-button (click)="openEdit(p)"><mat-icon>edit</mat-icon></button>
+                  <button mat-icon-button color="warn" (click)="delete(p)"><mat-icon>delete</mat-icon></button>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+  } <!-- fin @if (!esCiudadano()) -->
+
+  <mat-tab label="Horarios Visibles (Público)">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content style="padding:0">
+          <table mat-table [dataSource]="visibles()" class="full-width">
+            <ng-container matColumnDef="fechaHoraSalida">
+              <th mat-header-cell *matHeaderCellDef>Salida</th>
+              <td mat-cell *matCellDef="let p">{{ p.fechaHoraSalida | date:'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="ruta">
+              <th mat-header-cell *matHeaderCellDef>Ruta</th>
+              <td mat-cell *matCellDef="let p">{{ p.ruta?.nombre ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="tipoRecurrencia">
+              <th mat-header-cell *matHeaderCellDef>Recurrencia</th>
+              <td mat-cell *matCellDef="let p"><b>{{ p.tipoRecurrencia }}</b></td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let p"><span class="chip-activo">Visible</span></td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let p">
+                <button mat-icon-button matTooltip="Ver detalle" (click)="verDetalle(p)"><mat-icon>info</mat-icon></button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnsVisibles"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnsVisibles;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+@if (detalleAbierto()) {
+  <mat-card class="detalle-card">
+    <mat-card-header>
+      <mat-card-title>Detalle de programación</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+
+      <!-- ── Sección Bus ─────────────────────────────────────────────────── -->
+      <h3 class="detalle-seccion-title"><mat-icon>directions_bus</mat-icon> Bus</h3>
+      <div class="detalle-bus-grid">
+
+        <div class="bus-foto-wrap">
+          @if (getFotoUrl(programacionDetalle()?.bus)) {
+            <img [src]="getFotoUrl(programacionDetalle()?.bus)!" alt="Foto bus" class="bus-foto-img">
+          } @else {
+            <div class="bus-foto-placeholder"><mat-icon>directions_bus</mat-icon></div>
+          }
+        </div>
+
+        <div class="bus-datos">
+          <div class="detalle-row"><span class="detalle-label">Placa</span><span>{{ programacionDetalle()?.bus?.placa ?? '—' }}</span></div>
+          <div class="detalle-row"><span class="detalle-label">Modelo</span><span>{{ programacionDetalle()?.bus?.modelo ?? '—' }}</span></div>
+          <div class="detalle-row"><span class="detalle-label">Año</span><span>{{ programacionDetalle()?.bus?.anio ?? '—' }}</span></div>
+          <div class="detalle-row"><span class="detalle-label">Capacidad máxima</span><span>{{ programacionDetalle()?.bus?.capacidadMaximaPasajeros ?? '—' }} pasajeros</span></div>
+          <div class="detalle-row"><span class="detalle-label">Sentados</span><span>{{ programacionDetalle()?.bus?.capacidadSentados ?? '—' }}</span></div>
+          <div class="detalle-row"><span class="detalle-label">Parados</span><span>{{ programacionDetalle()?.bus?.capacidadParados ?? '—' }}</span></div>
+          <div class="detalle-row"><span class="detalle-label">Estado</span><span>{{ programacionDetalle()?.bus?.estado ?? '—' }}</span></div>
+        </div>
+
+        <div class="bus-qr-wrap">
+          @if (busQrUrl()) {
+            <img [src]="busQrUrl()!" alt="QR Bus" class="bus-qr-img">
+            <div class="bus-qr-label">Código QR del bus</div>
+          } @else {
+            <mat-spinner diameter="40" style="margin:auto"></mat-spinner>
+          }
+        </div>
+      </div>
+
+      <mat-divider style="margin:20px 0"></mat-divider>
+
+      <!-- ── Sección Ruta ────────────────────────────────────────────────── -->
+      <h3 class="detalle-seccion-title"><mat-icon>route</mat-icon> Ruta</h3>
+      <div class="detalle-ruta-info">
+        <div class="detalle-row"><span class="detalle-label">Nombre</span><span>{{ programacionDetalle()?.ruta?.nombre ?? '—' }}</span></div>
+        <div class="detalle-row"><span class="detalle-label">Descripción</span><span>{{ programacionDetalle()?.ruta?.descripcion ?? '—' }}</span></div>
+        <div class="detalle-row"><span class="detalle-label">Tarifa</span><span>{{ programacionDetalle()?.ruta?.tarifa != null ? ('$ ' + programacionDetalle()!.ruta!.tarifa) : '—' }}</span></div>
+        <div class="detalle-row"><span class="detalle-label">Tiempo total estimado</span><span>{{ getTiempoTotal(rutaMapa()) }} min</span></div>
+      </div>
+
+      @if (rutaMapa()?.paraderos?.length) {
+        <h4 class="detalle-subseccion-title">Paraderos</h4>
+        <div class="paraderos-table-wrap">
+          <table class="paraderos-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Tiempo desde anterior</th>
+                <th>Distancia desde anterior</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (par of rutaMapa()!.paraderos!; track par.orden) {
+                <tr>
+                  <td class="td-center">{{ par.orden }}</td>
+                  <td>{{ par.nombre ?? '—' }}</td>
+                  <td>{{ $any(par).tipo ?? '—' }}</td>
+                  <td class="td-center">{{ par.tiempoEstimadoDesdeAnteriorMinutos ? (par.tiempoEstimadoDesdeAnteriorMinutos + ' min') : '—' }}</td>
+                  <td class="td-center">{{ par.distanciaDesdeAnteriorMetros ? (par.distanciaDesdeAnteriorMetros + ' m') : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="detalle-mapa-wrap">
+          <app-map-picker #detalleMap [readonly]="true" [height]="320" [mapId]="'prog-detalle-map'"></app-map-picker>
+        </div>
+      } @else if (rutaMapa() !== null) {
+        <p style="color:#888;font-size:0.9rem;margin-top:12px">Sin datos de paraderos para esta ruta.</p>
+      } @else {
+        <div style="text-align:center;padding:24px"><mat-spinner diameter="36" style="margin:auto"></mat-spinner></div>
+      }
+
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cerrarDetalle()">Cerrar</button>
+    </mat-card-actions>
+  </mat-card>
+}

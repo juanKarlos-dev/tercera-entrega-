@@ -1,0 +1,49 @@
+@if (!isLoading()) {
+  <mat-sidenav-container class="security-shell">
+    <!-- Sidebar -->
+    <mat-sidenav
+      #drawer
+      [mode]="(isHandset$ | async) ? 'over' : 'side'"
+      [opened]="!(isHandset$ | async)"
+      class="sidebar-wrapper"
+    >
+      <app-sidebar></app-sidebar>
+    </mat-sidenav>
+
+    <!-- Main Content -->
+    <mat-sidenav-content class="main-content-wrapper">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          @if (isHandset$ | async) {
+            <button mat-icon-button (click)="drawer.toggle()" class="menu-btn">
+              <mat-icon>menu</mat-icon>
+            </button>
+          }
+        </div>
+
+        @if (!esCiudadano()) {
+          <div class="header-right">
+            <div class="status-chip" [class.active]="ctx.empresa()">
+              <mat-icon>{{ ctx.empresa() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              <span>{{ ctx.empresa() ? ctx.empresa()!.nombre : 'Sin empresa' }}</span>
+            </div>
+            <div class="status-chip" [class.active]="ctx.conductor()">
+              <mat-icon>{{ ctx.conductor() ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+              <span>{{ ctx.conductor() ? ((ctx.conductor()!.persona?.nombres ?? '') + ' ' + (ctx.conductor()!.persona?.apellidos ?? '')) : 'Sin conductor' }}</span>
+            </div>
+          </div>
+        }
+      </header>
+
+      <!-- Page Content Container -->
+      <main class="page-container">
+        <div class="page-content">
+          <router-outlet></router-outlet>
+        </div>
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+} @else {
+  <div style="min-height:100vh"></div>
+}

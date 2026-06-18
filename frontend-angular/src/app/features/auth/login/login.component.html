@@ -1,0 +1,157 @@
+<div class="login-container">
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo-container">
+      <div class="logo-icon">
+        <mat-icon>directions_bus</mat-icon>
+      </div>
+      <div class="logo-text">
+        <span class="brand">TransporteYA</span>
+        <span class="tagline">Un solo sistema, todos los roles.</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="login-main">
+    <!-- Left Section: Welcome and Illustration -->
+    <section class="info-section">
+      <div class="welcome-badge">
+        <mat-icon>security</mat-icon>
+        <span>Seguridad</span>
+      </div>
+      
+      <h1 class="welcome-title">Bienvenido a <br> <span class="brand-highlight">TransporteYA</span></h1>
+      
+      <p class="welcome-description">
+        Módulo de seguridad para la gestión de usuarios, autenticación y control de acceso.
+      </p>
+
+      <div class="illustration-container">
+        <img src="/bus-illustration.png" alt="Bus Illustration" class="bus-img">
+      </div>
+
+      <div class="security-note">
+        <div class="note-icon">
+          <mat-icon>lock</mat-icon>
+        </div>
+        <p>
+          El acceso al sistema está protegido por roles y permisos. Solo personal autorizado.
+        </p>
+      </div>
+    </section>
+
+    <!-- Right Section: Login Form -->
+    <section class="form-section">
+      <div class="login-card">
+        <h2 class="card-title">Iniciar sesión</h2>
+
+        @if (!recaptchaConfigured) {
+          <div class="recaptcha-warning">
+            <mat-icon>warning</mat-icon>
+            <p>reCAPTCHA no configurado. Revisa environment.ts</p>
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <div class="input-wrapper">
+              <mat-icon class="input-icon">mail</mat-icon>
+              <input 
+                id="email" 
+                type="email" 
+                formControlName="email" 
+                placeholder="usuario@empresa.com"
+                autocomplete="username"
+              >
+            </div>
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <span class="error-text">Correo electrónico inválido</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <div class="input-wrapper">
+              <mat-icon class="input-icon">lock</mat-icon>
+              <input 
+                #pwdInput
+                id="password" 
+                [type]="showPassword ? 'text' : 'password'" 
+                formControlName="password" 
+                placeholder="••••••••••••••••"
+                autocomplete="current-password"
+              >
+              <button type="button" class="toggle-password" (click)="showPassword = !showPassword">
+                <mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <span class="error-text">La contraseña es obligatoria</span>
+            }
+          </div>
+
+          <div class="forgot-password">
+            <a routerLink="/forgot-password">¿Olvidó su contraseña?</a>
+          </div>
+
+          @if (!recaptchaConfigured) {
+            <div class="form-group recaptcha-manual">
+              <label for="recaptchaToken">Token reCAPTCHA (Manual)</label>
+              <div class="input-wrapper">
+                <mat-icon class="input-icon">verified_user</mat-icon>
+                <input 
+                  id="recaptchaToken" 
+                  type="text" 
+                  formControlName="recaptchaToken" 
+                  placeholder="Pega el token aquí..."
+                >
+              </div>
+              <p class="helper-text">Requerido ya que el componente automático no está configurado.</p>
+            </div>
+          }
+
+          <button type="submit" class="btn-submit" [disabled]="submitting">
+            @if (submitting) {
+              <span>Entrando...</span>
+            } @else {
+              <span>Iniciar sesión</span>
+            }
+          </button>
+        </form>
+
+        <div class="recaptcha-badge">
+          <mat-icon>security</mat-icon>
+          <p>Protegido por reCAPTCHA v3 <br> <a href="#">Privacidad</a> • <a href="#">Términos</a></p>
+        </div>
+
+        <div class="divider">
+          <span>o continúa con</span>
+        </div>
+
+        <div class="oauth-options">
+          <button class="oauth-btn" (click)="oauthGoogle()">
+            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" alt="Google">
+            <span>Continuar con Google</span>
+          </button>
+          
+          <button class="oauth-btn" (click)="oauthMicrosoft()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft">
+            <span>Continuar con Microsoft</span>
+          </button>
+
+          <button class="oauth-btn" (click)="oauthGithub()">
+            <svg class="github-icon" viewBox="0 0 24 24">
+              <path d="M12 .5A12 12 0 0 0 8.2 23.9c.6.1.8-.26.8-.58v-2.03c-3.35.73-4.06-1.62-4.06-1.62-.54-1.39-1.33-1.76-1.33-1.76-1.1-.74.08-.73.08-.73 1.2.08 1.84 1.25 1.84 1.25 1.08 1.86 2.82 1.32 3.5 1 .1-.78.42-1.32.76-1.63-2.67-.3-5.46-1.34-5.46-5.95 0-1.32.47-2.4 1.24-3.25-.13-.3-.54-1.52.12-3.16 0 0 1.01-.32 3.3 1.24a11.48 11.48 0 0 1 6 0c2.29-1.56 3.3-1.24 3.3-1.24.66 1.64.25 2.86.12 3.16.77.85 1.24 1.93 1.24 3.25 0 4.62-2.8 5.64-5.47 5.94.43.37.81 1.1.81 2.23v3.3c0 .32.21.7.82.58A12 12 0 0 0 12 .5z" />
+            </svg>
+            <span>Continuar con GitHub</span>
+          </button>
+        </div>
+
+        <div class="card-footer">
+          <p>¿No tienes una cuenta? <button routerLink="/register" class="btn-create-account">Crear cuenta</button></p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,51 @@
+.chart-card {
+  margin-bottom: 1.5rem;
+
+  mat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .header-actions { margin-left: auto; }
+  }
+}
+
+.chart-wrapper {
+  height: 320px;
+  display: flex;
+  justify-content: center;
+  canvas { max-height: 100%; }
+
+  &.doughnut { height: 280px; }
+}
+
+.table-summary {
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+
+  .summary-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    .amount { font-weight: 700; color: #1e1b4b; margin-left: auto; }
+    .qty { color: #64748b; font-size: 0.8rem; }
+  }
+}
+
+.no-data {
+  color: #94a3b8;
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: #64748b;
+}

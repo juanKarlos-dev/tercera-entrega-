@@ -1,0 +1,265 @@
+<div class="page-header">
+  <h1>Métodos de Pago</h1>
+  <p>Tarjetas prepagadas, QR y recarga via ePayco</p>
+</div>
+
+<mat-tab-group>
+  @if (!esCiudadano()) {
+  <mat-tab label="Crear Método">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-header><mat-card-title>Nuevo método de pago</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="crearForm" class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre *</mat-label>
+              <input matInput formControlName="nombre">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo *</mat-label>
+              <mat-select formControlName="tipo">
+                @for (t of tipos; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+          </form>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary" [disabled]="crearForm.invalid" (click)="crear()">Crear</button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </mat-tab>
+  }
+
+  <mat-tab label="Listar">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content style="padding:0">
+          @if (esCiudadano()) {
+            @if (sinPerfilCiudadano()) {
+              <p style="padding:1rem;color:#b71c1c">No tienes un perfil de ciudadano registrado en el sistema.</p>
+            }
+            <table mat-table [dataSource]="metodosPropios()" class="full-width">
+              <ng-container matColumnDef="mpNombre">
+                <th mat-header-cell *matHeaderCellDef>Método</th>
+                <td mat-cell *matCellDef="let m"><b>{{ m.metodoPago?.nombre }}</b></td>
+              </ng-container>
+              <ng-container matColumnDef="mpCodigo">
+                <th mat-header-cell *matHeaderCellDef>Código</th>
+                <td mat-cell *matCellDef="let m">{{ m.codigo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="mpTipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let m">{{ m.metodoPago?.tipo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="mpSaldo">
+                <th mat-header-cell *matHeaderCellDef>Saldo</th>
+                <td mat-cell *matCellDef="let m">
+                  @if (m.metodoPago?.tipo === 'TARJETA_PREPAGADA') {
+                    <b>{{ m.saldo | currency:'COP':'symbol-narrow':'1.0-0' }}</b>
+                  } @else { — }
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnsPropios"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnsPropios;"></tr>
+            </table>
+          } @else {
+            <table mat-table [dataSource]="metodos()" class="full-width">
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                <td mat-cell *matCellDef="let m"><b>{{ m.nombre }}</b></td>
+              </ng-container>
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let m">{{ m.tipo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="activo">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let m">
+                  <span [class]="m.activo ? 'chip-activo' : 'chip-inactivo'">{{ m.activo ? 'Activo' : 'Inactivo' }}</span>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  @if (!esCiudadano()) {
+  <mat-tab label="Asignar a Ciudadano">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-header><mat-card-title>Asignar método de pago</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="asignarForm" class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudadano *</mat-label>
+              <mat-select formControlName="ciudadanoId">
+                @for (c of ciudadanos(); track c.id) { <mat-option [value]="c.id">{{ nombreCiudadano(c) }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Método de pago *</mat-label>
+              <mat-select formControlName="metodoPagoId">
+                @for (m of metodos(); track m.id) { <mat-option [value]="m.id">{{ m.nombre }} — {{ m.tipo }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Saldo inicial ($)</mat-label>
+              <input matInput type="number" min="0" formControlName="saldoInicial">
+              <span matPrefix>$ &nbsp;</span>
+              <mat-hint>Monto con el que se carga la tarjeta al asignarla (puede ser 0)</mat-hint>
+            </mat-form-field>
+          </form>
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary" [disabled]="asignarForm.invalid" (click)="asignar()">Asignar</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card style="margin-top:1rem">
+        <mat-card-header><mat-card-title>Consultar métodos de ciudadano</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <div class="search-bar">
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Ciudadano</mat-label>
+              <mat-select [ngModel]="ciudadanoIdBusqueda()" (ngModelChange)="ciudadanoIdBusqueda.set($event)">
+                @for (c of ciudadanos(); track c.id) { <mat-option [value]="c.id">{{ nombreCiudadano(c) }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <button mat-flat-button (click)="buscarPorCiudadano()">Consultar</button>
+          </div>
+          @if (metodosDelCiudadano().length) {
+            <table mat-table [dataSource]="metodosDelCiudadano()" class="full-width" style="margin-top:0.5rem">
+              <ng-container matColumnDef="metodoPago">
+                <th mat-header-cell *matHeaderCellDef>Método</th>
+                <td mat-cell *matCellDef="let m"><b>{{ m.metodoPago?.nombre }}</b></td>
+              </ng-container>
+              <ng-container matColumnDef="codigo">
+                <th mat-header-cell *matHeaderCellDef>Código</th>
+                <td mat-cell *matCellDef="let m">{{ m.codigo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let m">{{ m.metodoPago?.tipo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="saldo">
+                <th mat-header-cell *matHeaderCellDef>Saldo</th>
+                <td mat-cell *matCellDef="let m">
+                  @if (m.metodoPago?.tipo === 'TARJETA_PREPAGADA') {
+                    <b>{{ m.saldo | currency:'COP':'symbol-narrow':'1.0-0' }}</b>
+                  } @else { — }
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columnsConsultar"></tr>
+              <tr mat-row *matRowDef="let row; columns: columnsConsultar;"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+  }
+
+  <mat-tab label="Recarga ePayco">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-header><mat-card-title>Recargar tarjeta prepagada</mat-card-title></mat-card-header>
+        <mat-card-content>
+          @if (esCiudadano() && sinPerfilCiudadano()) {
+            <p style="color:#b71c1c">No tienes un perfil de ciudadano registrado en el sistema.</p>
+          }
+          @if (!esCiudadano()) {
+            <p class="step-label"><b>1.</b> Selecciona el ciudadano</p>
+            <mat-form-field appearance="outline" style="width:100%;margin-bottom:1rem">
+              <mat-label>Ciudadano</mat-label>
+              <mat-select [ngModel]="ciudadanoRecargaId()" (ngModelChange)="onCiudadanoRecargaChange($event)">
+                <mat-option [value]="null">— Selecciona —</mat-option>
+                @for (c of ciudadanos(); track c.id) {
+                  <mat-option [value]="c.id">{{ nombreCiudadano(c) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          }
+
+          @if (ciudadanoRecargaId()) {
+            <p class="step-label"><b>{{ esCiudadano() ? '1' : '2' }}.</b> Selecciona la tarjeta prepagada</p>
+            @if (cargandoMetodosRecarga()) {
+              <p class="hint">Cargando métodos...</p>
+            } @else if (metodosParaRecargar().length === 0) {
+              <p class="hint">Este ciudadano no tiene tarjetas prepagadas asignadas.</p>
+            } @else {
+              <mat-form-field appearance="outline" style="width:100%;margin-bottom:1rem">
+                <mat-label>Tarjeta prepagada</mat-label>
+                <mat-select [ngModel]="metodoPagoCiudadanoId()" (ngModelChange)="metodoPagoCiudadanoId.set($event)">
+                  @for (m of metodosParaRecargar(); track m.id) {
+                    <mat-option [value]="m.id">
+                      Tarjeta #{{ m.codigo }} — Saldo: {{ m.saldo | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              @if (metodoPagoCiudadanoId()) {
+                <div class="saldo-actual">
+                  <mat-icon>account_balance_wallet</mat-icon>
+                  <div>
+                    <div style="font-size:0.8rem;color:#666;margin-bottom:2px">Saldo actual</div>
+                    <b style="font-size:1.5rem">{{ saldoSeleccionado() | currency:'COP':'symbol-narrow':'1.0-0' }}</b>
+                  </div>
+                </div>
+              }
+            }
+          }
+
+          @if (metodoPagoCiudadanoId()) {
+            <p class="step-label"><b>{{ esCiudadano() ? '2' : '3' }}.</b> Selecciona el monto a recargar</p>
+            <div class="amounts-grid">
+              @for (m of montosPredef; track m) {
+                <button class="amount-btn" [class.selected]="montoRecarga() === m" (click)="setMonto(m)">
+                  ${{ m | number }}
+                </button>
+              }
+            </div>
+            <mat-form-field appearance="outline" style="width:100%;margin-top:1rem">
+              <mat-label>O ingresa otro monto (mín. $5.000)</mat-label>
+              <input matInput type="number" [ngModel]="montoRecarga()" (ngModelChange)="montoRecarga.set($event)">
+              <span matPrefix>$ &nbsp;</span>
+            </mat-form-field>
+
+            @if (saldoDespuesRecarga() !== undefined) {
+              <div class="saldo-actual" style="background:#e8f5e9;margin-top:0.5rem">
+                <mat-icon style="color:#388e3c">trending_up</mat-icon>
+                <div>
+                  <div style="font-size:0.8rem;color:#388e3c;margin-bottom:2px">Saldo después de recarga</div>
+                  <b style="font-size:1.5rem;color:#388e3c">{{ saldoDespuesRecarga() | currency:'COP':'symbol-narrow':'1.0-0' }}</b>
+                </div>
+              </div>
+            }
+          }
+
+          @if (recargaResp()) {
+            <div class="epayco-banner">
+              <mat-icon>check_circle</mat-icon>
+              <div>
+                <b>Recarga iniciada</b>
+                <p>Referencia: {{ recargaResp()!.referencia }}</p>
+                <p>Saldo actual: ${{ recargaResp()!.saldoActual | number }} → después: ${{ recargaResp()!.saldoDespuesDeRecarga | number }}</p>
+              </div>
+            </div>
+          }
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button mat-flat-button color="primary"
+            [disabled]="!ciudadanoRecargaId() || !metodoPagoCiudadanoId() || !montoRecarga()"
+            (click)="recargar()">
+            <mat-icon>payment</mat-icon> Pagar con ePayco
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </mat-tab>
+</mat-tab-group>

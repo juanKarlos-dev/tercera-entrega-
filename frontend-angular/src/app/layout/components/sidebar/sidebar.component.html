@@ -1,0 +1,216 @@
+<div class="sidebar-container">
+  <div class="sidebar-header">
+    <a routerLink="/dashboard" class="logo-container">
+      <div class="logo-box">
+        <mat-icon>directions_bus</mat-icon>
+      </div>
+      <div class="logo-text">
+        <span class="brand">TransporteYA</span>
+        <span class="module-name">Sistema Integral</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="context-selectors">
+    @if (showOrgContext()) {
+      @if (!esAdminEmpresa()) {
+        <mat-form-field appearance="fill" class="ctx-field">
+          <mat-label>Empresa activa</mat-label>
+          <mat-select [value]="selectedEmpresaId()" (valueChange)="onEmpresaChange($event)">
+            <mat-option [value]="null">— Ninguna —</mat-option>
+            @for (e of empresas(); track e.id) {
+              <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      } @else {
+        <div class="ctx-empresa-label">
+          <mat-icon>business</mat-icon>
+          <span>{{ ctx.empresa()?.nombre ?? auth.payload()?.empresaNombre ?? '—' }}</span>
+        </div>
+      }
+      @if (!esConductor()) {
+        <mat-form-field appearance="fill" class="ctx-field">
+          <mat-label>Conductor activo</mat-label>
+          <mat-select [value]="selectedConductorId()" (valueChange)="onConductorChange($event)">
+            <mat-option [value]="null">— Ninguno —</mat-option>
+            @for (c of conductores(); track c.id) {
+              <mat-option [value]="c.id">
+                {{ c.persona ? (c.persona.nombres + ' ' + c.persona.apellidos) : (c.email ?? c.numeroLicencia ?? 'Conductor ' + c.id) }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    }
+  </div>
+
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <mat-icon>dashboard</mat-icon>
+      <span>Dashboard</span>
+    </a>
+
+    @if (showUsers()) {
+      <a routerLink="/users" routerLinkActive="active" class="nav-item">
+        <mat-icon>group</mat-icon>
+        <span>Usuarios</span>
+      </a>
+    }
+
+    @if (showRoles()) {
+      <a routerLink="/roles" routerLinkActive="active" class="nav-item">
+        <mat-icon>badge</mat-icon>
+        <span>Roles</span>
+      </a>
+    }
+
+    @if (showPermissions()) {
+      <a routerLink="/role-permissions" routerLinkActive="active" class="nav-item">
+        <mat-icon>rule</mat-icon>
+        <span>Permisos</span>
+      </a>
+    }
+
+    <div class="nav-divider">OPERACIONES</div>
+
+    @if (showEmpresas()) {
+      <a routerLink="/empresas" routerLinkActive="active" class="nav-item">
+        <mat-icon>business</mat-icon>
+        <span>Empresas</span>
+      </a>
+    }
+    @if (showBuses()) {
+      <a routerLink="/buses" routerLinkActive="active" class="nav-item">
+        <mat-icon>directions_bus</mat-icon>
+        <span>Buses</span>
+      </a>
+    }
+    @if (showConductores()) {
+      <a routerLink="/conductores" routerLinkActive="active" class="nav-item">
+        <mat-icon>badge</mat-icon>
+        <span>Conductores</span>
+      </a>
+    }
+    @if (showParaderos()) {
+      <a routerLink="/paraderos" routerLinkActive="active" class="nav-item">
+        <mat-icon>place</mat-icon>
+        <span>Paraderos</span>
+      </a>
+    }
+    @if (showRutas()) {
+      <a routerLink="/rutas" routerLinkActive="active" class="nav-item">
+        <mat-icon>route</mat-icon>
+        <span>Rutas</span>
+      </a>
+    }
+    @if (showTurnos()) {
+      <a routerLink="/turnos" routerLinkActive="active" class="nav-item">
+        <mat-icon>schedule</mat-icon>
+        <span>Turnos</span>
+      </a>
+    }
+    @if (showProgramaciones()) {
+      <a routerLink="/programaciones" routerLinkActive="active" class="nav-item">
+        <mat-icon>calendar_month</mat-icon>
+        <span>Programaciones</span>
+      </a>
+    }
+    @if (showBoletos()) {
+      <a routerLink="/boletos" routerLinkActive="active" class="nav-item">
+        <mat-icon>confirmation_number</mat-icon>
+        <span>Boletos</span>
+      </a>
+    }
+    @if (showIncidentes()) {
+      <a routerLink="/incidentes" routerLinkActive="active" class="nav-item">
+        <mat-icon>warning</mat-icon>
+        <span>Incidentes</span>
+      </a>
+    }
+    @if (showCiudadanos()) {
+      <a routerLink="/ciudadanos" routerLinkActive="active" class="nav-item">
+        <mat-icon>people</mat-icon>
+        <span>Ciudadanos</span>
+      </a>
+    }
+    @if (showMetodosPago()) {
+      <a routerLink="/metodos-pago" routerLinkActive="active" class="nav-item">
+        <mat-icon>payment</mat-icon>
+        <span>Métodos de Pago</span>
+      </a>
+    }
+    @if (showReportes()) {
+      <a routerLink="/reportes" routerLinkActive="active" class="nav-item">
+        <mat-icon>bar_chart</mat-icon>
+        <span>Reportes</span>
+      </a>
+    }
+    @if (showTracking()) {
+      <a routerLink="/tracking" routerLinkActive="active" class="nav-item">
+        <mat-icon>map</mat-icon>
+        <span>Tracking en vivo</span>
+      </a>
+    }
+    @if (showPanelControl()) {
+      <a routerLink="/panel-control" routerLinkActive="active" class="nav-item">
+        <mat-icon>dashboard_customize</mat-icon>
+        <span>Panel de Control</span>
+      </a>
+    }
+    @if (showMensajes()) {
+      <a routerLink="/mensajes" routerLinkActive="active" class="nav-item">
+        <mat-icon [matBadge]="mensajesNoLeidos() || null"
+                  matBadgeColor="warn"
+                  matBadgeSize="small"
+                  aria-hidden="false">chat</mat-icon>
+        <span>Mensajes</span>
+      </a>
+    }
+    @if (showGrupos()) {
+      <a routerLink="/grupos" routerLinkActive="active" class="nav-item">
+        <mat-icon>group_work</mat-icon>
+        <span>Grupos</span>
+      </a>
+    }
+    @if (showPqrs()) {
+      <a routerLink="/pqrs" routerLinkActive="active" class="nav-item">
+        <mat-icon>support_agent</mat-icon>
+        <span>PQRS</span>
+      </a>
+    }
+    @if (showPqrsAdmin()) {
+      <a routerLink="/admin/pqrs" routerLinkActive="active" class="nav-item">
+        <mat-icon>admin_panel_settings</mat-icon>
+        <span>Gestión PQRS</span>
+      </a>
+    }
+    @if (showCitas()) {
+      <a routerLink="/citas" routerLinkActive="active" class="nav-item">
+        <mat-icon>event</mat-icon>
+        <span>Agendar cita</span>
+      </a>
+    }
+
+    <div class="nav-divider">SISTEMA</div>
+
+    <a routerLink="/profile" routerLinkActive="active" class="nav-item">
+      <mat-icon>account_circle</mat-icon>
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a routerLink="/profile" class="user-pill" [matTooltip]="userRoleTooltip()">
+      <div class="avatar">{{ userInitials() }}</div>
+      <div class="user-info">
+        <span class="name">{{ userLabel() }}</span>
+        <span class="role" [matTooltip]="userRoleTooltip()">{{ userRoleDisplay() }}</span>
+      </div>
+      <mat-icon class="profile-icon">chevron_right</mat-icon>
+    </a>
+    <button type="button" mat-icon-button class="logout-btn" (click)="logout()" aria-label="Cerrar sesión">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
+</div>

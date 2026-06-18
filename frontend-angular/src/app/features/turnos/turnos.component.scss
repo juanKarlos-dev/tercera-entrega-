@@ -1,0 +1,187 @@
+$item-h: 32px;
+
+.form-card  { margin-bottom: 1.5rem; }
+.form-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; .col-2 { grid-column: span 2; } }
+.full-width { width: 100%; }
+.count      { color: #64748b; font-size: 0.9rem; }
+
+// ── Hidden picker anchor ───────────────────────────────────────────────────
+.picker-anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+
+  input { width: 0; height: 0; border: none; outline: none; }
+}
+
+// ── Main datetime group ────────────────────────────────────────────────────
+.datetime-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// ── Visual date/time block ─────────────────────────────────────────────────
+.dt-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+
+  &:hover {
+    border-color: #90caf9;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.08);
+  }
+}
+
+.dt-date-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dt-weekday {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.dt-date-main {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.dt-placeholder {
+    font-weight: 400;
+    color: #bbb;
+    font-size: 14px;
+  }
+}
+
+// ── Time pill with wheel ────────────────────────────────────────────────────
+.dt-time-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #f4f6fb;
+  border: 1px solid #e0e4ef;
+  border-radius: 10px;
+  padding: 4px 10px;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.wheel-colon {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
+  align-self: center;
+  margin: 0 1px;
+  // vertically offset to align with center item
+  margin-top: -4px;
+}
+
+// ── Wheel column ───────────────────────────────────────────────────────────
+.wheel-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: $item-h * 5;
+  width: 36px;
+  overflow: hidden;
+  cursor: ns-resize;
+
+  // lines above and below center item
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    height: 1px;
+    background: #c5cae9;
+    z-index: 2;
+    pointer-events: none;
+  }
+  &::before { top: $item-h * 2; }
+  &::after  { top: $item-h * 3; }
+
+  // AM/PM only has 3 items → 3× height, lines around center (item index 1)
+  &.wheel-col--ampm {
+    height: $item-h * 3;
+    width: 42px;
+
+    &::before { top: $item-h * 1; }
+    &::after  { top: $item-h * 2; }
+  }
+}
+
+.wheel-item {
+  height: $item-h;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.12s ease, font-size 0.12s ease;
+  cursor: pointer;
+  font-family: 'Roboto Mono', monospace, sans-serif;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+// ── Create / Update button ─────────────────────────────────────────────────
+.btn-crear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  height: 36px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: not-allowed;
+  background: #e0e0e0;
+  color: #9e9e9e;
+  transition: background 0.2s, color 0.2s, border-radius 0.2s, box-shadow 0.2s;
+
+  &--active {
+    background: #1a237e;
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(26, 35, 126, 0.3);
+
+    &:hover {
+      background: #283593;
+      box-shadow: 0 4px 10px rgba(26, 35, 126, 0.4);
+    }
+  }
+}
+
+// ── Error hint ─────────────────────────────────────────────────────────────
+.group-error {
+  font-size: 0.75rem;
+  color: #f44336;
+  padding: 0 4px;
+}

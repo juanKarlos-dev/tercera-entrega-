@@ -1,0 +1,43 @@
+.block {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+}
+
+.title {
+  margin-bottom: 1.5rem;
+  font-weight: 800;
+  color: #1e1b4b;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.roles-item {
+  height: auto !important;
+  padding: 1rem 0 !important;
+}
+
+.roles-container {
+  margin-top: 0.5rem;
+  
+  .role-chip {
+    background-color: #f1f4ff;
+    color: #2d3ef0;
+    font-weight: 600;
+  }
+}
+
+.no-roles {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 0.9rem;
+}

@@ -1,0 +1,139 @@
+<!-- ── Header ─────────────────────────────────────── -->
+<div class="pq-header">
+  <div class="pq-header__left">
+    <div class="pq-header__icon">📬</div>
+    <div>
+      <h1 class="pq-header__title">Atención al Ciudadano (PQRS)</h1>
+      <p class="pq-header__sub">Peticiones, Quejas, Reclamos y Sugerencias</p>
+    </div>
+  </div>
+</div>
+
+<div class="pq-layout">
+
+  <!-- ── TABS NAVEGACIÓN ────────────────────────────── -->
+  <div class="pq-nav">
+    <button class="pq-nav-item" [class.pq-nav-item--active]="tabActiva() === 0" (click)="tabActiva.set(0)">
+      <mat-icon>add_circle_outline</mat-icon> Crear Solicitud
+    </button>
+    <button class="pq-nav-item" [class.pq-nav-item--active]="tabActiva() === 1" (click)="tabActiva.set(1)">
+      <mat-icon>search</mat-icon> Consultar Estado
+    </button>
+  </div>
+
+  <div class="pq-content">
+    
+    <!-- ── TAB 0: CREAR PQRS ────────────────────────── -->
+    @if (tabActiva() === 0) {
+      @if (radicadoCreado()) {
+        <div class="pq-success">
+          <div class="pq-success__icon"><mat-icon>check_circle</mat-icon></div>
+          <h2>Tu PQRS fue registrada con éxito</h2>
+          <div class="pq-radicado-box">
+            <span>NÚMERO DE RADICADO</span>
+            <strong>{{ radicadoCreado() }}</strong>
+          </div>
+          <p>Guarda este número para consultar el estado de tu solicitud. Hemos enviado una copia a tu correo.</p>
+          <button class="pq-btn pq-btn--primary" (click)="nuevaPqrs()">Nueva Solicitud</button>
+        </div>
+      } @else {
+        <div class="pq-form">
+          <div class="pq-form-grid">
+            <div class="pq-field">
+              <label>Tipo de Solicitud *</label>
+              <select class="pq-input" [ngModel]="tipo()" (ngModelChange)="tipo.set($event)">
+                <option value="">— Selecciona un tipo —</option>
+                @for (t of tiposOpciones; track t) { <option [value]="t">{{ labelTipo[t] }}</option> }
+              </select>
+            </div>
+            <div class="pq-field">
+              <label>Categoría *</label>
+              <select class="pq-input" [ngModel]="categoria()" (ngModelChange)="categoria.set($event)">
+                <option value="">— Selecciona una categoría —</option>
+                @for (c of categoriasOpciones; track c) { <option [value]="c">{{ labelCategoria[c] }}</option> }
+              </select>
+            </div>
+            <div class="pq-field pq-col-span-2">
+              <label>Correo Electrónico *</label>
+              <input class="pq-input" type="email" [ngModel]="emailContacto()" (ngModelChange)="emailContacto.set($event)" placeholder="tucorreo@ejemplo.com" />
+            </div>
+            <div class="pq-field pq-col-span-2">
+              <label>Descripción detallada *</label>
+              <textarea class="pq-input pq-textarea" rows="6" maxlength="500" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" placeholder="Describe tu solicitud..."></textarea>
+              <div class="pq-hint">{{ descripcion().length }} / 500 caracteres</div>
+            </div>
+          </div>
+          <div class="pq-field pq-col-span-2" style="margin-top: 16px;">
+            <label>Adjuntar Fotos (Máx. 3) *Opcional*</label>
+            <input type="file" multiple accept="image/*" (change)="onFilesSelected($event)" style="display: block; margin-top: 8px;">
+            
+            @if (fotosPreview().length > 0) {
+              <div style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                @for (preview of fotosPreview(); track $index) {
+                  <div style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <img [src]="preview" style="width: 100%; height: 100%; object-fit: cover;">
+                    <button class="pq-btn-remove" (click)="eliminarFoto($index)" style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                      ✕
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          <div class="pq-form-footer">
+            <button class="pq-btn pq-btn--primary" [disabled]="enviando()" (click)="enviarPqrs()">
+              @if (enviando()) { <mat-progress-spinner diameter="18" mode="indeterminate" /> }
+              @else { <mat-icon>send</mat-icon> }
+              Enviar Solicitud
+            </button>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- ── TAB 1: CONSULTAR ESTADO ──────────────────── -->
+    @if (tabActiva() === 1) {
+      <div class="pq-consult">
+        <div class="pq-search-box">
+          <mat-icon>search</mat-icon>
+          <input class="pq-input" type="text" [ngModel]="radicadoBuscar()" (ngModelChange)="radicadoBuscar.set($event)" placeholder="Número de radicado (Ej. PQRS-2026-...)" (keydown.enter)="consultarPqrs()" />
+          <button class="pq-btn pq-btn--accent" [disabled]="buscando()" (click)="consultarPqrs()">Consultar</button>
+        </div>
+
+        @if (buscando()) {
+          <div class="pq-loading"><mat-progress-spinner diameter="32" mode="indeterminate" /></div>
+        }
+
+        @if (errorBusqueda()) {
+          <div class="pq-error">
+            <mat-icon>error_outline</mat-icon>
+            <p>{{ errorBusqueda() }}</p>
+          </div>
+        }
+
+        @if (pqrsBuscado()) {
+          <div class="pq-result-card">
+            <div class="pq-result-header">
+              <h3>{{ pqrsBuscado()!.tipo }} — {{ pqrsBuscado()!.categoria }}</h3>
+              <span class="pq-status-badge" [class]="'pq-status--' + pqrsBuscado()!.estado.toLowerCase()">
+                {{ pqrsBuscado()!.estado }}
+              </span>
+            </div>
+            <div class="pq-result-body">
+              <p><strong>Radicado:</strong> {{ pqrsBuscado()!.radicado }}</p>
+              <p><strong>Fecha de creación:</strong> {{ pqrsBuscado()!.createdAt | date:'medium' }}</p>
+              <div class="pq-desc-box">{{ pqrsBuscado()!.descripcion }}</div>
+              
+              @if (pqrsBuscado()!.respuesta) {
+                <div class="pq-response">
+                  <h4>Respuesta Oficial</h4>
+                  <p>{{ pqrsBuscado()!.respuesta }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

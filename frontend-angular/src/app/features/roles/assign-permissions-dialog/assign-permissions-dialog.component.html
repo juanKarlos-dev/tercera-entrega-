@@ -1,0 +1,113 @@
+<div class="dialog-header">
+  <div class="header-info">
+    <h2 mat-dialog-title>Permisos para: {{ data.role.name }}</h2>
+    <p class="role-desc">{{ data.role.description }}</p>
+  </div>
+  <div class="header-actions">
+    <mat-slide-toggle [checked]="showTechnical()" (change)="showTechnical.set($event.checked)" color="primary">
+      Mostrar detalles técnicos
+    </mat-slide-toggle>
+    <button mat-icon-button mat-dialog-close type="button"><mat-icon>close</mat-icon></button>
+  </div>
+</div>
+
+<mat-dialog-content class="premium-scroll">
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <div class="permissions-catalog">
+    @for (group of mainGroups(); track group.module) {
+      <div class="module-section">
+        <div class="module-header">
+          <mat-icon>{{ getIcon(group.module) }}</mat-icon>
+          <h3>{{ group.module }}</h3>
+          <div class="spacer"></div>
+          <button mat-button type="button" class="btn-select-all" (click)="toggleGroup(group)" [disabled]="!canManage()">
+            {{ isGroupAllSelected(group) ? 'Desmarcar todo' : 'Marcar todo' }}
+          </button>
+        </div>
+
+        <div class="permissions-grid">
+          @for (entry of group.entries; track entry.label) {
+            <div class="perm-item" [class.selected]="isEntrySelected(entry)" (click)="canManage() && toggleEntry(entry)">
+              <mat-checkbox
+                [checked]="isEntrySelected(entry)"
+                [indeterminate]="isEntryIndeterminate(entry)"
+                [disabled]="!canManage()"
+                (change)="canManage() && toggleEntry(entry)"
+                (click)="$event.stopPropagation()"
+              >
+                <div class="perm-content">
+                  <span class="friendly-label">{{ entry.label }}</span>
+                  @if (showTechnical()) {
+                    <div class="technical-data">
+                      <span class="method" [class]="(entry.representative.method || '').toLowerCase()">{{ entry.representative.method }}</span>
+                      <span class="url">{{ entry.representative.url }}</span>
+                    </div>
+                  }
+                </div>
+              </mat-checkbox>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (advancedGroups().length) {
+      <mat-expansion-panel class="advanced-panel" [expanded]="false">
+        <mat-expansion-panel-header>
+          <mat-panel-title>Avanzado (técnicos)</mat-panel-title>
+          <mat-panel-description> Sesiones, perfiles OAuth, usuario-rol, etc. </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        @for (group of advancedGroups(); track group.module) {
+          <div class="module-section nested">
+            <div class="module-header">
+              <mat-icon>{{ getIcon(group.module) }}</mat-icon>
+              <h3>{{ group.module }}</h3>
+              <div class="spacer"></div>
+              <button mat-button type="button" class="btn-select-all" [disabled]="!canManage()" (click)="toggleGroup(group); $event.stopPropagation()">
+                {{ isGroupAllSelected(group) ? 'Desmarcar todo' : 'Marcar todo' }}
+              </button>
+            </div>
+            <div class="permissions-grid">
+              @for (entry of group.entries; track entry.label) {
+                <div class="perm-item" [class.selected]="isEntrySelected(entry)" (click)="canManage() && toggleEntry(entry)">
+                  <mat-checkbox
+                    [checked]="isEntrySelected(entry)"
+                    [indeterminate]="isEntryIndeterminate(entry)"
+                    [disabled]="!canManage()"
+                    (change)="canManage() && toggleEntry(entry)"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <div class="perm-content">
+                      <span class="friendly-label">{{ entry.label }}</span>
+                      @if (showTechnical()) {
+                        <div class="technical-data">
+                          <span class="method" [class]="(entry.representative.method || '').toLowerCase()">{{ entry.representative.method }}</span>
+                          <span class="url">{{ entry.representative.url }}</span>
+                        </div>
+                      }
+                    </div>
+                  </mat-checkbox>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </mat-expansion-panel>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Cancelar</button>
+  <button mat-raised-button color="primary" class="btn-save" type="button" (click)="save()" [disabled]="loading() || !hasChanges() || saving() || !canManage()">
+    @if (saving()) {
+      <span>Guardando...</span>
+    } @else {
+      <span>Guardar cambios</span>
+    }
+  </button>
+</mat-dialog-actions>

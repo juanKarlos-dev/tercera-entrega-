@@ -1,0 +1,138 @@
+<!-- ── Header ─────────────────────────────────────── -->
+<div class="ct-header">
+  <div class="ct-header__left">
+    <div class="ct-header__icon">📅</div>
+    <div>
+      <h1 class="ct-header__title">Agendamiento de Citas</h1>
+      <p class="ct-header__sub">Programa tu asesoría presencial o virtual</p>
+    </div>
+  </div>
+</div>
+
+<div class="ct-layout">
+  
+  @if (citaConfirmada()) {
+    <div class="ct-success">
+      <div class="ct-success__icon"><mat-icon>event_available</mat-icon></div>
+      <h2>¡Cita agendada con éxito!</h2>
+      <p>Hemos enviado una invitación a <strong>{{ email() }}</strong> con los detalles.</p>
+      
+      <div class="ct-summary-box">
+        <div class="ct-summary-row"><mat-icon>person</mat-icon> {{ nombre() }}</div>
+        <div class="ct-summary-row"><mat-icon>event</mat-icon> {{ fechaSeleccionada() | date:'fullDate' }}</div>
+        <div class="ct-summary-row"><mat-icon>schedule</mat-icon> {{ horaSeleccionada() }} - {{ horaFinDisplay(horaSeleccionada()) }}</div>
+        <div class="ct-summary-row"><mat-icon>{{ tipoAtencion() === 'Virtual' ? 'videocam' : 'business' }}</mat-icon> {{ tipoAtencion() }}</div>
+      </div>
+
+      <button class="ct-btn ct-btn--primary" (click)="nuevaCita()">Agendar Nueva Cita</button>
+    </div>
+  } @else {
+    
+    <!-- ── Panel Izquierdo: Fecha y Hora ────────────── -->
+    <div class="ct-panel-left">
+      <div class="ct-section-title">
+        <mat-icon>event</mat-icon> 1. Selecciona Fecha y Hora
+      </div>
+      
+      @if (cargandoDisponibilidad()) {
+        <div style="display:flex; justify-content:center; padding: 24px;">
+          <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+        </div>
+      } @else {
+        <div class="ct-field">
+          <label>Días Disponibles (Próximos 10 días hábiles)</label>
+          <div class="ct-date-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;">
+            @for (d of diasDisponibles(); track d.date) {
+              <button 
+                class="ct-time-slot" 
+                [class.ct-time-slot--sel]="fechaSeleccionada() === d.date" 
+                (click)="onSelectFecha(d.date)">
+                {{ d.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (fechaSeleccionada()) {
+          <div class="ct-field" style="margin-top: 24px;">
+            <label>Horarios Disponibles</label>
+            <div class="ct-time-grid">
+              @for (h of horasDelDia(); track h.hora) {
+                <button 
+                  class="ct-time-slot" 
+                  [class.ct-time-slot--sel]="horaSeleccionada() === h.hora"
+                  [disabled]="!h.disponible"
+                  [style.opacity]="!h.disponible ? '0.5' : '1'"
+                  [style.cursor]="!h.disponible ? 'not-allowed' : 'pointer'"
+                  (click)="onSelectHora(h.hora, h.disponible)">
+                  {{ h.hora }}
+                </button>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="ct-empty-time">
+            <mat-icon>event_note</mat-icon>
+            <p>Selecciona una fecha para ver los horarios.</p>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- ── Panel Derecho: Datos ─────────────────────── -->
+    <div class="ct-panel-right">
+      <div class="ct-section-title">
+        <mat-icon>person</mat-icon> 2. Ingresa tus Datos
+      </div>
+
+      <div class="ct-form">
+        <div class="ct-field">
+          <label>Nombre Completo *</label>
+          <input class="ct-input" type="text" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" placeholder="Ej. Juan Pérez" />
+        </div>
+        <div class="ct-field">
+          <label>Correo Electrónico *</label>
+          <input class="ct-input" type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" placeholder="tucorreo@ejemplo.com" />
+        </div>
+        
+        <div class="ct-grid-2">
+          <div class="ct-field">
+            <label>Tipo de Atención</label>
+            <select class="ct-input" [ngModel]="tipoAtencion()" (ngModelChange)="tipoAtencion.set($event)">
+              @for (t of tiposAtencion; track t) { <option [value]="t">{{ t }}</option> }
+            </select>
+          </div>
+          <div class="ct-field">
+            <label>Tipo de Consulta</label>
+            <select class="ct-input" [ngModel]="tipoConsulta()" (ngModelChange)="tipoConsulta.set($event)">
+              @for (c of tiposConsulta; track c) { <option [value]="c">{{ c }}</option> }
+            </select>
+          </div>
+        </div>
+
+        <div class="ct-field">
+          <label style="display:flex; justify-content:space-between;">
+            <span>Motivo detallado *</span>
+            <span style="font-size: 12px; color: #6b7280;">{{ motivo().length }}/300</span>
+          </label>
+          <textarea class="ct-input ct-textarea" rows="4" maxlength="300" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" placeholder="Describe brevemente el motivo de tu cita..."></textarea>
+        </div>
+
+        <div class="ct-actions">
+          <div class="ct-selection-summary">
+            @if (fechaSeleccionada() && horaSeleccionada()) {
+              <span>Cita para el <strong>{{ fechaSeleccionada() }}</strong> a las <strong>{{ horaSeleccionada() }}</strong></span>
+            } @else {
+              <span class="ct-muted">Falta seleccionar fecha/hora</span>
+            }
+          </div>
+          <button class="ct-btn ct-btn--primary" [disabled]="enviando() || !fechaSeleccionada() || !horaSeleccionada() || !nombre() || !email() || !motivo()" (click)="agendarCita()">
+            @if (enviando()) { <mat-progress-spinner diameter="18" mode="indeterminate" /> }
+            @else { <mat-icon>event_available</mat-icon> }
+            Confirmar Cita
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

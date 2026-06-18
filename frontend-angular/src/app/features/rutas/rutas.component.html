@@ -1,0 +1,212 @@
+<div class="page-header">
+  <h1>Rutas</h1>
+  <p>Trazado de recorridos con paraderos en orden</p>
+</div>
+
+<div class="action-bar">
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Buscar por nombre</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [formControl]="searchControl" placeholder="Nombre de la ruta...">
+  </mat-form-field>
+  <span class="count">{{ rutasFiltradas().length }} ruta(s)</span>
+  @if (!esCiudadano()) {
+    <button mat-flat-button color="primary" (click)="openNew()">
+      <mat-icon>add</mat-icon> Nueva ruta
+    </button>
+  }
+</div>
+
+@if (showForm()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ editingId() ? 'Editar ruta' : 'Nueva ruta' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre *</mat-label>
+          <input matInput formControlName="nombre">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="col-2">
+          <mat-label>Tarifa</mat-label>
+          <input matInput type="number" formControlName="tarifa">
+        </mat-form-field>
+      </form>
+
+      <mat-divider style="margin:1rem 0"></mat-divider>
+      <h3 style="margin:0 0 0.75rem;color:#1e1b4b;font-size:1rem">Paraderos en orden (mínimo 3)</h3>
+
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Agregar paradero</mat-label>
+        <mat-select (valueChange)="addParadero($event)">
+          @for (p of paraderos(); track p.id) {
+            <mat-option [value]="p.id">{{ p.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div cdkDropList (cdkDropListDropped)="drop($event)" class="paraderos-drop-list">
+        @for (p of paraderosSel(); track p.id; let i = $index) {
+          <div cdkDrag class="paradero-drag-item">
+            <mat-icon cdkDragHandle style="cursor:move;color:#94a3b8">drag_indicator</mat-icon>
+            <div class="paradero-num">{{ i + 1 }}</div>
+            <div class="paradero-info">
+              <span class="paradero-nombre">{{ p.nombre }}</span>
+              <span class="paradero-dist">{{ i === 0 ? 'Inicio de ruta' : (p.distanciaDesdeAnteriorMetros + ' m · ' + p.tiempoEstimadoDesdeAnteriorMinutos + ' min desde anterior') }}</span>
+            </div>
+            <button mat-icon-button color="warn" (click)="removeParadero(p.id!)"><mat-icon>close</mat-icon></button>
+          </div>
+        }
+        @if (!paraderosSel().length) {
+          <p class="empty-hint">Selecciona al menos 3 paraderos para definir la ruta</p>
+        }
+      </div>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancel()">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="form.invalid || paraderosSel().length < 3" (click)="save()">
+        {{ editingId() ? 'Actualizar' : 'Crear' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+@if (showMapa() && rutaMapa()) {
+  <mat-card class="mapa-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon style="vertical-align:middle;margin-right:0.4rem;color:#2d3ef0">map</mat-icon>
+        {{ rutaMapa()!.nombre }}
+      </mat-card-title>
+      <button mat-icon-button (click)="cancel()" style="margin-left:auto"><mat-icon>close</mat-icon></button>
+    </mat-card-header>
+    <mat-card-content>
+      <app-map-picker #rutaMap [height]="420" [readonly]="true" [lat]="5.0703" [lng]="-75.5138"></app-map-picker>
+
+      <div class="ruta-tabla-wrap">
+        <table class="ruta-mapa-tabla">
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th>Paradero</th>
+              <th>Dist. desde anterior</th>
+              <th>Tiempo estimado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of rutaMapa()!.paraderos ?? []; track p.orden; let i = $index) {
+              <tr [class.first-stop]="i === 0" [class.last-stop]="i === (rutaMapa()!.paraderos!.length - 1)">
+                <td><div class="stop-badge">{{ p.orden ?? (i + 1) }}</div></td>
+                <td class="stop-name">{{ p.nombre }}</td>
+                <td>{{ i === 0 ? '—' : ((p.distanciaDesdeAnteriorMetros ?? 0) | number) + ' m' }}</td>
+                <td>{{ i === 0 ? '—' : (p.tiempoEstimadoDesdeAnteriorMinutos ?? 0) + ' min' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (rutaSeleccionadaHorarios()) {
+  <mat-card class="horarios-card" style="margin-top:1.5rem">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon style="vertical-align:middle;margin-right:0.4rem;color:#2d3ef0">schedule</mat-icon>
+        Horarios — {{ rutaSeleccionadaHorarios()!.nombre }}
+      </mat-card-title>
+      <button mat-icon-button (click)="rutaSeleccionadaHorarios.set(null)" style="margin-left:auto" matTooltip="Cerrar">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content style="padding:1rem 1.5rem">
+      @if (programacionesRuta().length === 0) {
+        <p style="color:#64748b;text-align:center;padding:1.5rem 0">No hay horarios disponibles para esta ruta</p>
+      } @else {
+        <div class="ruta-tabla-wrap">
+          <table class="ruta-mapa-tabla">
+            <thead>
+              <tr>
+                <th>Fecha/Hora salida</th>
+                <th>Bus (placa)</th>
+                <th>Estado</th>
+                <th>Recurrencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of programacionesRuta(); track p.id) {
+                <tr>
+                  <td>{{ p.fechaHoraSalida ? (p.fechaHoraSalida | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+                  <td>{{ p.bus?.placa ?? '—' }}</td>
+                  <td>{{ p.estado ?? '—' }}</td>
+                  <td>{{ p.recurrente ? (p.tipoRecurrencia ?? 'Sí') : 'No recurrente' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <mat-divider style="margin:1.25rem 0"></mat-divider>
+      <h3 class="section-subtitle">
+        <mat-icon>place</mat-icon> Paraderos de la ruta
+      </h3>
+      @if (paraderosHorarios().length === 0) {
+        <p class="empty-hint">Sin paraderos disponibles para esta ruta</p>
+      } @else {
+        <div class="paraderos-secuencia">
+          @for (p of paraderosHorarios(); track p.paraderoId; let i = $index; let last = $last) {
+            <span class="seq-stop">
+              <span class="seq-num">{{ p.orden ?? (i + 1) }}</span>
+              <span class="seq-nombre">{{ p.nombre }}</span>
+              @if (i > 0 && p.tiempoEstimadoDesdeAnteriorMinutos) {
+                <span class="seq-tiempo">({{ p.tiempoEstimadoDesdeAnteriorMinutos }} min)</span>
+              }
+            </span>
+            @if (!last) {
+              <span class="seq-arrow">→</span>
+            }
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+<mat-card>
+  <mat-card-content style="padding:0">
+    <table mat-table [dataSource]="rutasFiltradas()" class="full-width">
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let r"><b>{{ r.nombre }}</b></td>
+      </ng-container>
+      <ng-container matColumnDef="descripcion">
+        <th mat-header-cell *matHeaderCellDef>Descripción</th>
+        <td mat-cell *matCellDef="let r">{{ r.descripcion }}</td>
+      </ng-container>
+      <ng-container matColumnDef="tarifa">
+        <th mat-header-cell *matHeaderCellDef>Tarifa</th>
+        <td mat-cell *matCellDef="let r">{{ r.tarifa != null ? ('$ ' + r.tarifa) : '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let r">
+          <button mat-icon-button matTooltip="Ver horarios" (click)="verHorarios(r)"><mat-icon>schedule</mat-icon></button>
+          <button mat-icon-button matTooltip="Ver mapa" (click)="verMapa(r)"><mat-icon>map</mat-icon></button>
+          @if (!esCiudadano()) {
+            <button mat-icon-button matTooltip="Editar" (click)="openEdit(r)"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="delete(r)"><mat-icon>delete</mat-icon></button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>

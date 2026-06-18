@@ -1,0 +1,849 @@
+<!-- ── Header Principal ────────────────────────────── -->
+<div class="msg-header">
+  <div class="msg-header__left">
+    <div class="msg-header__icon">💬</div>
+    <div>
+      <h1 class="msg-header__title">Mensajes</h1>
+      <p class="msg-header__sub">Comunicación directa entre usuarios del sistema</p>
+    </div>
+  </div>
+  <div class="msg-header__actions">
+    <div class="msg-header__realtime">
+      <span class="msg-realtime-dot"></span>
+      Envíos en tiempo real
+    </div>
+    <button class="msg-btn msg-btn--ghost" (click)="mostrarCrearGrupo.set(true)">
+      <mat-icon>group_add</mat-icon> Crear Grupo
+    </button>
+  </div>
+</div>
+
+<!-- ── Pestañas principales ────────────────────────── -->
+<div class="msg-tabs-bar">
+  <button class="msg-tab" [class.msg-tab--active]="pestanaPanel() === 'RECIBIDOS'" (click)="pestanaPanel.set('RECIBIDOS')">
+    <mat-icon>inbox</mat-icon> Recibidos
+    @if (totalNoLeidosDirectos() > 0) { <span class="msg-badge">{{ totalNoLeidosDirectos() }}</span> }
+  </button>
+  <button class="msg-tab" [class.msg-tab--active]="pestanaPanel() === 'ENVIADOS'" (click)="pestanaPanel.set('ENVIADOS'); cargarEnviados()">
+    <mat-icon>send</mat-icon> Enviados
+  </button>
+  <button class="msg-tab msg-tab--accent" [class.msg-tab--active]="pestanaPanel() === 'GRUPO'" (click)="abrirPanelMensajeGrupal()">
+    <mat-icon>groups</mat-icon> Mensaje a grupo
+  </button>
+  <button class="msg-tab msg-tab--accent" [class.msg-tab--active]="pestanaPanel() === 'NUEVO'" (click)="abrirPanelNuevoMensaje()">
+    <mat-icon>edit</mat-icon> Nuevo mensaje
+  </button>
+</div>
+
+<div class="msg-layout">
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VISTA: RECIBIDOS                                -->
+  <!-- ═══════════════════════════════════════════════ -->
+  @if (pestanaPanel() === 'RECIBIDOS') {
+
+    <!-- COLUMNA IZQUIERDA: Navegación -->
+    <div class="msg-sidebar">
+      <div class="msg-nav">
+        <button class="msg-nav-item" [class.msg-nav-item--active]="vistaActiva() === 'DIRECTOS'" (click)="cambiarVista('DIRECTOS')">
+          <mat-icon>inbox</mat-icon>
+          <span>Bandeja</span>
+          @if (totalNoLeidosDirectos() > 0) { <span class="msg-badge">{{ totalNoLeidosDirectos() }}</span> }
+        </button>
+        <button class="msg-nav-item" [class.msg-nav-item--active]="vistaActiva() === 'MIS_GRUPOS'" (click)="cambiarVista('MIS_GRUPOS')">
+          <mat-icon>groups</mat-icon>
+          <span>Mis Grupos</span>
+          @if (totalNoLeidosMisGrupos() > 0) { <span class="msg-badge">{{ totalNoLeidosMisGrupos() }}</span> }
+        </button>
+        <button class="msg-nav-item" [class.msg-nav-item--active]="vistaActiva() === 'EXPLORAR'" (click)="cambiarVista('EXPLORAR')">
+          <mat-icon>explore</mat-icon>
+          <span>Explorar Grupos</span>
+        </button>
+      </div>
+
+      <div class="msg-list">
+        @if (vistaActiva() === 'DIRECTOS') {
+          <div class="msg-list-header">Bandeja de Entrada</div>
+          
+          <div class="msg-filters">
+            <div class="msg-filter-group">
+              <button [class.active]="filtroBandejaTipo() === 'TODOS'" (click)="filtroBandejaTipo.set('TODOS')">Todos</button>
+              <button [class.active]="filtroBandejaTipo() === 'INDIVIDUAL'" (click)="filtroBandejaTipo.set('INDIVIDUAL')">Individuales</button>
+              <button [class.active]="filtroBandejaTipo() === 'GRUPAL'" (click)="filtroBandejaTipo.set('GRUPAL')">Grupales</button>
+            </div>
+            <div class="msg-filter-group">
+              <button [class.active]="filtroBandejaLeido() === 'TODOS'" (click)="filtroBandejaLeido.set('TODOS')">Todos</button>
+              <button [class.active]="filtroBandejaLeido() === 'NO_LEIDOS'" (click)="filtroBandejaLeido.set('NO_LEIDOS')">No Leídos</button>
+            </div>
+            <div class="msg-filter-group msg-filter-date" style="display: flex; gap: 4px;">
+              <input type="date" class="msg-input" style="padding: 4px; font-size: 12px;" [ngModel]="filtroBandejaFechaDesde()" (ngModelChange)="filtroBandejaFechaDesde.set($event)" title="Fecha Desde">
+              <input type="date" class="msg-input" style="padding: 4px; font-size: 12px;" [ngModel]="filtroBandejaFechaHasta()" (ngModelChange)="filtroBandejaFechaHasta.set($event)" title="Fecha Hasta">
+            </div>
+            <div class="msg-filter-group msg-filter-group--icon">
+              <button (click)="filtroBandejaOrden.set(filtroBandejaOrden() === 'DESC' ? 'ASC' : 'DESC')" matTooltip="Ordenar por fecha">
+                <mat-icon>{{ filtroBandejaOrden() === 'DESC' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          @for (msg of bandejaFiltrada(); track msg.id) {
+            <div class="msg-list-item" [class.msg-list-item--active]="mensajeUnificadoActivo()?.id === msg.id" [class.msg-list-item--unread]="!msg.leido" (click)="abrirMensajeUnificado(msg)">
+              <div class="msg-avatar" [class.msg-avatar--group]="msg.tipo === 'GRUPAL'">
+                @if (msg.tipo === 'GRUPAL') { <mat-icon>campaign</mat-icon> }
+                @else { {{ inicialEnAvatar(msg.emisorNombre || msg.emisorId) }} }
+              </div>
+              <div class="msg-item-info">
+                <div class="msg-item-top">
+                  <span class="msg-item-name">{{ msg.emisorNombre || msg.emisorId }}</span>
+                  <span class="msg-item-time">{{ msg.createdAt | date:'shortTime' }}</span>
+                </div>
+                <p class="msg-item-preview">{{ msg.preview || msg.contenido }}</p>
+                <div class="msg-item-badges">
+                  <span class="msg-type-badge" [class.msg-type-badge--individual]="msg.tipo === 'INDIVIDUAL'" [class.msg-type-badge--grupal]="msg.tipo === 'GRUPAL'">
+                    {{ msg.tipo === 'INDIVIDUAL' ? 'Individual' : 'Grupal' }}
+                  </span>
+                </div>
+              </div>
+              @if (!msg.leido) { <div class="msg-unread-dot"></div> }
+            </div>
+          }
+          @if (!bandejaFiltrada().length) { <p class="msg-empty-text">No hay mensajes que coincidan con los filtros</p> }
+        }
+
+        @if (vistaActiva() === 'MIS_GRUPOS') {
+          <div class="msg-list-header">Tus Grupos</div>
+          @for (g of misGrupos(); track g.id) {
+            <div class="msg-list-item" [class.msg-list-item--active]="grupoActivo()?.id === g.id" (click)="abrirGrupo(g)">
+              <div class="msg-avatar msg-avatar--group"><mat-icon>group</mat-icon></div>
+              <div class="msg-item-info">
+                <div class="msg-item-top">
+                  <span class="msg-item-name">{{ g.nombre }}</span>
+                </div>
+                <p class="msg-item-preview">Grupo Público</p>
+              </div>
+              @if (g.unreadCount && g.unreadCount > 0) { <span class="msg-badge">{{ g.unreadCount }}</span> }
+            </div>
+          }
+          @if (!misGrupos().length) { <p class="msg-empty-text">No estás en ningún grupo</p> }
+        }
+      </div>
+    </div>
+
+    <!-- COLUMNA CENTRAL: Chat o Explorar -->
+    <div class="msg-main">
+      @if (vistaActiva() === 'EXPLORAR') {
+        <div class="msg-explore">
+          <h2>Grupos Públicos Disponibles</h2>
+          <p>Únete a grupos para comunicarte con otros usuarios de la misma ruta o interés.</p>
+          @if (cargando()) {
+            <div class="msg-loading"><mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner></div>
+          } @else {
+            <div class="msg-grid">
+              @for (g of gruposPublicos(); track g.id) {
+                <div class="msg-group-card">
+                  <div class="msg-group-card__icon"><mat-icon>group</mat-icon></div>
+                  <h3>{{ g.nombre }}</h3>
+                  <p>{{ g.descripcion || 'Sin descripción' }}</p>
+                  <div class="msg-group-card__footer">
+                    <span><mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">people</mat-icon> {{ g.totalMiembros || 0 }} miembros</span>
+                    <button class="msg-btn msg-btn--accent msg-btn--sm" (click)="unirseAGrupoPublico(g)">Unirse</button>
+                  </div>
+                </div>
+              }
+              @if (!gruposPublicos().length) {
+                <div class="msg-empty-state">
+                  <mat-icon>search_off</mat-icon>
+                  <p>No hay grupos públicos nuevos disponibles para unirte.</p>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else if (mensajeUnificadoActivo() || contactoActivo() || grupoActivo()) {
+        <div class="chat-header">
+          @if (mensajeUnificadoActivo()) {
+            <div class="msg-avatar" [class.msg-avatar--group]="mensajeUnificadoActivo()!.tipo === 'GRUPAL'">
+              @if (mensajeUnificadoActivo()!.tipo === 'GRUPAL') { <mat-icon>campaign</mat-icon> }
+              @else { {{ inicialEnAvatar(mensajeUnificadoActivo()!.emisorNombre || mensajeUnificadoActivo()!.emisorId) }} }
+            </div>
+            <div class="chat-header-info">
+              <span class="chat-title">{{ mensajeUnificadoActivo()!.emisorNombre || mensajeUnificadoActivo()!.emisorId }}</span>
+              <span class="chat-status">{{ mensajeUnificadoActivo()!.tipo === 'INDIVIDUAL' ? 'Mensaje Directo' : 'Mensaje Grupal (Difusión)' }}</span>
+            </div>
+          } @else if (contactoActivo()) {
+            <div class="msg-avatar">{{ inicialEnAvatar(contactoActivo()!) }}</div>
+            <div class="chat-header-info">
+              <span class="chat-title">{{ contactoActivo() }}</span>
+              <span class="chat-status">● En línea</span>
+            </div>
+          } @else if (grupoActivo()) {
+            <div class="msg-avatar msg-avatar--group"><mat-icon>group</mat-icon></div>
+            <div class="chat-header-info">
+              <span class="chat-title">{{ grupoActivo()!.nombre }}</span>
+              <span class="chat-status">{{ miembrosGrupo().length }} miembros</span>
+            </div>
+          }
+        </div>
+
+        <div class="chat-messages">
+          @if (mensajeUnificadoActivo()) {
+            <div class="chat-bubble chat-bubble--them" style="max-width: 100%; margin-top: 1rem;">
+              <div class="chat-bubble__sender">{{ mensajeUnificadoActivo()!.emisorNombre || mensajeUnificadoActivo()!.emisorId }}</div>
+              <div class="chat-bubble__text">{{ mensajeUnificadoActivo()!.contenido }}</div>
+              <div class="chat-bubble__meta">
+                <span class="chat-bubble__time">{{ mensajeUnificadoActivo()!.createdAt | date:'medium' }}</span>
+              </div>
+              
+              @if (lecturasUnificadas()) {
+                <div class="msg-read-receipts">
+                  <div class="msg-read-receipts__title">
+                    <mat-icon style="font-size: 14px; width: 14px; height: 14px;">visibility</mat-icon> 
+                    Leído por ({{ lecturasUnificadas()!.readCount }}/{{ lecturasUnificadas()!.totalRecipients }})
+                  </div>
+                  @for (u of lecturasUnificadas()!.readUsers; track u.usuarioId) {
+                    <div class="msg-read-receipts__user">
+                      <span>{{ u.nombre || u.usuarioId }}</span>
+                      <span class="msg-read-receipts__time">{{ u.readAt | date:'shortTime' }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else if (contactoActivo()) {
+            @for (msg of historialChat(); track msg.id) {
+              <div [class]="msg.remitenteId === miId() ? 'chat-bubble chat-bubble--me' : 'chat-bubble chat-bubble--them'">
+                <div class="chat-bubble__text">{{ msg.contenido }}</div>
+                <div class="chat-bubble__meta">
+                  <span class="chat-bubble__time">{{ msg.createdAt | date:'shortTime' }}</span>
+                  @if (msg.tieneUbicacion) {
+                    <span class="chat-bubble__loc" (click)="verEnGoogleMaps(msg.latitud!, msg.longitud!)">📍 Ubicación</span>
+                  }
+                  @if (msg.remitenteId === miId()) {
+                    <mat-icon class="chat-bubble__read" [style.color]="msg.leido ? '#22c55e' : '#94a3b8'">{{ msg.leido ? 'done_all' : 'done' }}</mat-icon>
+                  }
+                </div>
+              </div>
+            }
+            @if (!historialChat().length) { <div class="msg-empty-state"><mat-icon>forum</mat-icon><p>Comienza la conversación</p></div> }
+          } @else if (grupoActivo()) {
+            @for (msg of historialGrupo(); track msg.id) {
+              @if (msg.deletedByAdmin) {
+                <!-- Mensaje eliminado -->
+                <div class="chat-bubble chat-bubble--deleted">
+                  <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">block</mat-icon>
+                  Mensaje eliminado por un administrador
+                </div>
+              } @else {
+                <div [class]="msg.remitenteId === miId() ? 'chat-bubble chat-bubble--me' : 'chat-bubble chat-bubble--them'">
+                  @if (msg.remitenteId !== miId()) { <div class="chat-bubble__sender">{{ getNombreMiembro(msg.remitenteId) }}</div> }
+                  <div class="chat-bubble__text">{{ msg.contenido }}</div>
+                  <div class="chat-bubble__meta">
+                    <span class="chat-bubble__time">{{ msg.createdAt | date:'shortTime' }}</span>
+                    @if (esAdminGrupo() && msg.remitenteId !== miId()) {
+                      <button class="chat-bubble__delete-btn" matTooltip="Eliminar mensaje" (click)="eliminarMensajeDeGrupo(msg)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            }
+            @if (!historialGrupo().length) { <div class="msg-empty-state"><mat-icon>forum</mat-icon><p>Sé el primero en enviar un mensaje a este grupo</p></div> }
+          }
+        </div>
+
+        <div class="chat-input-area">
+          @if (mensajeUnificadoActivo()) {
+            @if (mensajeUnificadoActivo()!.tipo !== 'ALERTA_MASIVA') {
+              <input class="chat-input" placeholder="Responder a {{ mensajeUnificadoActivo()!.emisorId }}..." maxlength="500" [ngModel]="mensajeEnCursor()" (ngModelChange)="mensajeEnCursor.set($event)" (keydown.enter)="enviarRespuestaUnificada()" />
+              <button class="msg-btn-send" (click)="enviarRespuestaUnificada()"><mat-icon>send</mat-icon></button>
+            } @else {
+              <div class="msg-read-only-banner">
+                <mat-icon>info</mat-icon>
+                <span>Las alertas masivas no admiten respuestas.</span>
+              </div>
+            }
+          } @else if (contactoActivo()) {
+            <input class="chat-input" placeholder="Escribe un mensaje..." maxlength="500" [ngModel]="mensajeEnCursor()" (ngModelChange)="mensajeEnCursor.set($event)" (keydown.enter)="enviarRespuestaDirecta()" />
+            <button class="msg-btn-send" (click)="enviarRespuestaDirecta()"><mat-icon>send</mat-icon></button>
+          } @else if (grupoActivo()) {
+            <input class="chat-input" placeholder="Enviar mensaje al grupo..." maxlength="500" [ngModel]="mensajeGrupoEnCursor()" (ngModelChange)="mensajeGrupoEnCursor.set($event)" (keydown.enter)="enviarMensajeGrupo()" />
+            <button class="msg-btn-send" (click)="enviarMensajeGrupo()"><mat-icon>send</mat-icon></button>
+          }
+        </div>
+      } @else {
+        <div class="msg-empty-state" style="height: 100%">
+          <mat-icon style="font-size: 64px; width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.5;">chat</mat-icon>
+          <h2>Selecciona un chat</h2>
+          <p>Elige una conversación directa o un grupo para comenzar a enviar mensajes.</p>
+        </div>
+      }
+    </div>
+
+    <!-- COLUMNA DERECHA: Detalles -->
+    <div class="msg-sidebar msg-sidebar--right">
+      @if (contactoActivo()) {
+        <div class="msg-details">
+          <div class="msg-details__avatar">{{ inicialEnAvatar(contactoActivo()!) }}</div>
+          <h3>{{ contactoActivo() }}</h3>
+          <p>Usuario del sistema</p>
+          <div class="msg-details-section">
+            <h4>Opciones</h4>
+            <button class="msg-action-row msg-action-row--danger">
+              <mat-icon>block</mat-icon> Bloquear Usuario
+            </button>
+          </div>
+        </div>
+      } @else if (grupoActivo()) {
+        <div class="msg-details">
+          <div class="msg-details__avatar msg-details__avatar--group"><mat-icon>groups</mat-icon></div>
+          <h3>{{ grupoActivo()!.nombre }}</h3>
+          <p>{{ grupoActivo()!.descripcion }}</p>
+          <p class="msg-muted">Creado por {{ grupoActivo()!.creadorId }}</p>
+          <div class="msg-details-section">
+            <h4>Acciones del Grupo</h4>
+            <button class="msg-action-row msg-action-row--danger" (click)="abandonarGrupo()">
+              <mat-icon>exit_to_app</mat-icon> Abandonar Grupo
+            </button>
+          </div>
+          <div class="msg-details-section">
+            <h4>Miembros ({{ miembrosGrupo().length }})</h4>
+            <!-- Búsqueda de miembros -->
+            <div style="margin-bottom: 8px;">
+              <input
+                class="msg-input"
+                style="width:100%; padding:6px 10px; font-size:13px;"
+                placeholder="Buscar miembro..."
+                [ngModel]="busquedaMiembro()"
+                (ngModelChange)="busquedaMiembro.set($event)" />
+            </div>
+            <div class="msg-members-list">
+              @for (m of miembrosGrupoFiltrados(); track m.usuarioId) {
+                <div class="msg-member-item" [class.msg-member-item--admin]="m.rol === 'ADMIN'" [class.msg-member-item--blocked]="m.bloqueado">
+                  <div class="msg-member-avatar" [class.msg-member-avatar--admin]="m.rol === 'ADMIN'">
+                    {{ inicialEnAvatar(m.nombres || m.usuarioId) }}
+                  </div>
+                  <div class="msg-member-info">
+                    <span class="msg-member-name">
+                      {{ m.nombres ? (m.nombres + ' ' + (m.apellidos || '')) : m.usuarioId }}
+                      @if (m.usuarioId === miId()) { <span class="msg-member-you">(Tú)</span> }
+                      @if (m.bloqueado) { <span class="msg-badge msg-badge--blocked" style="font-size:10px; margin-left:4px; background:#ef4444; color:#fff; border-radius:4px; padding:1px 5px;">Bloqueado</span> }
+                    </span>
+                    <span class="msg-member-role" [class.msg-member-role--admin]="m.rol === 'ADMIN'">
+                      {{ getLabelRol(m.rol) }}
+                    </span>
+                    <!-- Criterio 1: Fecha de unión -->
+                    <span style="font-size:11px; color:#9ca3af; margin-top:2px; display:block;">
+                      Miembro desde {{ m.fechaUnion | date:'dd/MMM/yyyy' }}
+                    </span>
+                  </div>
+                  @if (esAdminGrupo() && m.usuarioId !== miId()) {
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                      <!-- Botones: Promover y Bloquear -->
+                      @if (m.rol !== 'ADMIN') {
+                        <button class="msg-icon-btn" matTooltip="Promover a Admin" (click)="promoverMiembro(m.usuarioId)" style="color:#6366f1;">
+                          <mat-icon style="font-size:18px;width:18px;height:18px;">star</mat-icon>
+                        </button>
+                      }
+                      @if (!m.bloqueado) {
+                        <button class="msg-icon-btn msg-icon-btn--warn" matTooltip="Bloquear usuario" (click)="bloquearMiembro(m.usuarioId)" style="color:#f59e0b;">
+                          <mat-icon style="font-size:18px;width:18px;height:18px;">block</mat-icon>
+                        </button>
+                      }
+                      <button class="msg-icon-btn msg-icon-btn--danger" matTooltip="Remover miembro" (click)="removerMiembro(m.usuarioId)">
+                        <mat-icon>person_remove</mat-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+              @if (!miembrosGrupoFiltrados().length && busquedaMiembro()) {
+                <div style="text-align:center; padding: 12px; color: #9ca3af; font-size:13px;">
+                  No se encontraron miembros con ese nombre.
+                </div>
+              }
+            </div>
+          </div>
+          <!-- Criterio 5: Historial de Membresía (solo para admins) -->
+          @if (esAdminGrupo() && logMembresia().length) {
+            <div class="msg-details-section" style="margin-top: 12px;">
+              <h4 style="display:flex; align-items:center; gap:6px;">
+                <mat-icon style="font-size:18px;width:18px;height:18px;">history</mat-icon>
+                Historial de Membresía
+              </h4>
+              <div style="max-height: 200px; overflow-y: auto;">
+                @for (log of logMembresia(); track log.id) {
+                  <div style="padding: 6px 0; border-bottom: 1px solid var(--msg-border, #e5e7eb); font-size: 12px; color: #6b7280;">
+                    <span style="font-weight:600; color:#374151;">{{ log.objetivoNombres ? (log.objetivoNombres + ' ' + (log.objetivoApellidos || '')) : log.usuarioObjetivoId }}</span>
+                    fue <span style="font-weight:600; text-transform:lowercase;">{{ log.accion }}</span>
+                    @if (log.actorNombres) { por <span style="font-weight:600; color:#374151;">{{ log.actorNombres + ' ' + (log.actorApellidos || '') }}</span> }
+                    <span style="display:block; font-size:11px; color:#9ca3af;">{{ log.fecha | date:'dd/MMM/yyyy HH:mm' }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="msg-empty-state">
+          <mat-icon>info</mat-icon>
+          <p>Selecciona un chat para ver sus detalles.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VISTA: ENVIADOS                                 -->
+  <!-- ═══════════════════════════════════════════════ -->
+  @if (pestanaPanel() === 'ENVIADOS') {
+    <div class="msg-enviados-layout">
+      <!-- Lista de enviados -->
+      <div class="msg-enviados-list">
+        <div class="msg-section-title">
+          <mat-icon>send</mat-icon> Mensajes enviados
+        </div>
+        @for (msg of enviados(); track msg.id) {
+          <div class="msg-enviado-card" [class.msg-enviado-card--active]="mensajeDetalleEnviado()?.id === msg.id" (click)="abrirDetalleEnviado(msg)">
+            <div class="msg-enviado-card__top">
+              <div class="msg-avatar msg-avatar--sm">{{ inicialEnAvatar(msg.destinatarioNombre || msg.destinatarioId || '?') }}</div>
+              <div class="msg-enviado-card__info">
+                <span class="msg-enviado-card__dest">Para: {{ msg.destinatarioNombre || msg.destinatarioId }}</span>
+                <span class="msg-enviado-card__date">{{ msg.createdAt | date:'dd/MM/yyyy h:mm a' }}</span>
+              </div>
+            </div>
+            <p class="msg-enviado-card__preview">{{ msg.contenido }}</p>
+            <div class="msg-enviado-card__badges">
+              @if (msg.leido) {
+                <span class="msg-status-badge msg-status-badge--leido">
+                  <mat-icon>done_all</mat-icon> Leído el {{ msg.fechaLeido | date:'dd/MM/yyyy h:mm a' }}
+                </span>
+              } @else {
+                <span class="msg-status-badge msg-status-badge--no-leido">
+                  <mat-icon>schedule</mat-icon> No leído
+                </span>
+              }
+              @if (msg.tieneUbicacion) {
+                <span class="msg-status-badge msg-status-badge--ubicacion">
+                  <mat-icon>location_on</mat-icon> Ubicación adjunta
+                </span>
+              }
+            </div>
+          </div>
+        }
+        @if (!enviados().length) {
+          <div class="msg-empty-state" style="padding: 40px 0;">
+            <mat-icon>outbox</mat-icon>
+            <p>No has enviado mensajes aún.</p>
+          </div>
+        }
+      </div>
+
+      <!-- Detalle del mensaje seleccionado -->
+      <div class="msg-enviado-detalle">
+        @if (mensajeDetalleEnviado()) {
+          <div class="msg-section-title">
+            <mat-icon>description</mat-icon> Detalle del mensaje seleccionado
+          </div>
+          <div class="msg-detalle-body">
+            <div class="msg-detalle-row"><strong>Para:</strong> {{ mensajeDetalleEnviado()!.destinatarioNombre || mensajeDetalleEnviado()!.destinatarioId }}</div>
+            <div class="msg-detalle-row"><strong>Fecha de envío:</strong> {{ mensajeDetalleEnviado()!.createdAt | date:'dd/MM/yyyy h:mm a' }}</div>
+            <div class="msg-detalle-row">
+              <strong>Estado:</strong>
+              @if (mensajeDetalleEnviado()!.leido) {
+                <span class="msg-leido-ok">Leído ✅</span>
+              } @else {
+                <span class="msg-leido-no">No leído</span>
+              }
+            </div>
+            @if (mensajeDetalleEnviado()!.leido && mensajeDetalleEnviado()!.fechaLeido) {
+              <div class="msg-detalle-row"><strong>Leído el:</strong> {{ mensajeDetalleEnviado()!.fechaLeido | date:'dd/MM/yyyy h:mm a' }}</div>
+            }
+            <div class="msg-detalle-row msg-detalle-row--msg">
+              <strong>Mensaje:</strong>
+              <p>{{ mensajeDetalleEnviado()!.contenido }}</p>
+            </div>
+            @if (mensajeDetalleEnviado()!.tieneUbicacion) {
+              <div class="msg-detalle-ubicacion">
+                <div class="msg-detalle-ubicacion__header">
+                  <mat-icon>location_on</mat-icon> Ubicación adjunta
+                </div>
+                <div class="msg-detalle-ubicacion__coords">
+                  Lat {{ mensajeDetalleEnviado()!.latitud }}, Long {{ mensajeDetalleEnviado()!.longitud }}
+                </div>
+                <button class="msg-btn msg-btn--ghost msg-btn--sm" (click)="verEnGoogleMaps(mensajeDetalleEnviado()!.latitud!, mensajeDetalleEnviado()!.longitud!)">
+                  <mat-icon>open_in_new</mat-icon> Ver ubicación
+                </button>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="msg-empty-state" style="height: 100%">
+            <mat-icon>touch_app</mat-icon>
+            <p>Selecciona un mensaje enviado para ver su detalle.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VISTA: NUEVO MENSAJE                            -->
+  <!-- ═══════════════════════════════════════════════ -->
+  @if (pestanaPanel() === 'NUEVO') {
+    <div class="msg-nuevo-layout">
+      <div class="msg-nuevo-form">
+        <div class="msg-section-title">
+          <mat-icon>edit</mat-icon> Redactar nuevo mensaje
+        </div>
+
+        <!-- Buscador de destinatario -->
+        <div class="msg-field">
+          <label>Buscar destinatario por nombre o email</label>
+          <div class="msg-search-wrapper">
+            <mat-icon class="msg-search-icon">search</mat-icon>
+            <input class="msg-input msg-input--search"
+                   type="text"
+                   [ngModel]="busquedaTexto()"
+                   (ngModelChange)="onBusquedaChange($event)"
+                   placeholder="Ej. juan, maria@email.com"
+                   [disabled]="!!destinatarioSeleccionado()" />
+            @if (destinatarioSeleccionado()) {
+              <button class="msg-search-clear" (click)="limpiarDestinatario()"><mat-icon>close</mat-icon></button>
+            }
+          </div>
+
+          <!-- Resultados de búsqueda -->
+          @if (resultadosBusqueda().length > 0 && !destinatarioSeleccionado()) {
+            <div class="msg-search-results">
+              @for (u of resultadosBusqueda(); track u.securityUserId) {
+                <div class="msg-search-result-item" (click)="seleccionarDestinatario(u)">
+                  <div class="msg-avatar msg-avatar--sm">{{ inicialEnAvatar(u.nombres) }}</div>
+                  <div class="msg-search-result-info">
+                    <span class="msg-search-result-name">{{ u.nombres }} {{ u.apellidos }}</span>
+                    <span class="msg-search-result-email">{{ u.email }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+          @if (buscando()) {
+            <div class="msg-search-results">
+              <div class="msg-loading" style="padding: 12px;"><mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner> <span style="margin-left: 8px; color: #94a3b8;">Buscando...</span></div>
+            </div>
+          }
+        </div>
+
+        <!-- Destinatario seleccionado -->
+        @if (destinatarioSeleccionado()) {
+          <div class="msg-field">
+            <label>Destinatario seleccionado:</label>
+            <div class="msg-destinatario-chip">
+              <div class="msg-avatar msg-avatar--sm">{{ inicialEnAvatar(destinatarioSeleccionado()!.nombres) }}</div>
+              <div>
+                <span class="msg-chip-name">{{ destinatarioSeleccionado()!.nombres }} {{ destinatarioSeleccionado()!.apellidos }}</span>
+                <span class="msg-chip-email">{{ destinatarioSeleccionado()!.email }}</span>
+              </div>
+              <button class="msg-chip-remove" (click)="limpiarDestinatario()"><mat-icon>close</mat-icon></button>
+            </div>
+          </div>
+        }
+
+        <!-- Textarea del mensaje -->
+        <div class="msg-field">
+          <label>Mensaje</label>
+          <textarea class="msg-input msg-textarea"
+                    rows="4"
+                    maxlength="500"
+                    [ngModel]="nuevoMensajeTexto()"
+                    (ngModelChange)="nuevoMensajeTexto.set($event)"
+                    placeholder="Escribe tu mensaje aquí..."></textarea>
+          <div class="msg-char-counter" [class.msg-char-counter--warn]="nuevoMensajeTexto().length > 450">
+            {{ nuevoMensajeTexto().length }} / 500
+          </div>
+        </div>
+
+        <!-- Toggle GPS -->
+        <div class="msg-gps-section">
+          <div class="msg-gps-toggle">
+            <mat-icon>location_on</mat-icon>
+            <span>Adjuntar ubicación actual (opcional)</span>
+            <mat-slide-toggle [checked]="adjuntarUbicacion()" (change)="onToggleUbicacion($event.checked)" color="primary"></mat-slide-toggle>
+          </div>
+          @if (cargandoGps()) {
+            <div class="msg-gps-status msg-gps-status--loading">
+              <mat-progress-spinner diameter="14" mode="indeterminate"></mat-progress-spinner>
+              Obteniendo ubicación…
+            </div>
+          }
+          @if (gpsEstado() === 'ok') {
+            <div class="msg-gps-status msg-gps-status--ok">
+              ✅ Ubicación adjuntada correctamente
+              <br><span class="msg-gps-coords">Lat {{ latitud() }}, Long {{ longitud() }}</span>
+            </div>
+          }
+          @if (gpsEstado() === 'error') {
+            <div class="msg-gps-status msg-gps-status--error">
+              ❌ No se pudo obtener la ubicación. El mensaje se enviará sin ubicación.
+            </div>
+          }
+        </div>
+
+        <!-- Botón enviar -->
+        <button class="msg-btn msg-btn--primary msg-btn--full"
+                (click)="enviarNuevoMensaje()"
+                [disabled]="enviando() || !destinatarioSeleccionado() || !nuevoMensajeTexto().trim()">
+          @if (enviando()) {
+            <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+          } @else {
+            <mat-icon>send</mat-icon>
+          }
+          Enviar mensaje
+        </button>
+      </div>
+
+      <!-- Preview -->
+      <div class="msg-nuevo-preview">
+        <div class="msg-section-title">
+          <mat-icon>visibility</mat-icon> Vista previa
+        </div>
+        @if (destinatarioSeleccionado() && nuevoMensajeTexto().trim()) {
+          <div class="msg-preview-card">
+            <div class="msg-preview-dest">
+              <strong>Para:</strong> {{ destinatarioSeleccionado()!.nombres }} {{ destinatarioSeleccionado()!.apellidos }}
+            </div>
+            <div class="msg-preview-body">{{ nuevoMensajeTexto() }}</div>
+            @if (adjuntarUbicacion() && gpsEstado() === 'ok') {
+              <div class="msg-preview-loc">📍 Con ubicación adjunta</div>
+            }
+          </div>
+        } @else {
+          <div class="msg-empty-state" style="padding: 40px 0;">
+            <mat-icon>drafts</mat-icon>
+            <p>Selecciona un destinatario y escribe un mensaje para ver la vista previa.</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- VISTA: MENSAJE A GRUPO                          -->
+  <!-- ═══════════════════════════════════════════════ -->
+  @if (pestanaPanel() === 'GRUPO') {
+    <div class="msg-grupal-layout">
+      <!-- Columna Izquierda: Redacción -->
+      <div class="msg-grupal-redactar">
+        <div class="msg-section-title">
+          Redactar mensaje a grupo
+        </div>
+        
+        <div class="msg-field">
+          <label>Grupos disponibles <mat-icon class="msg-info-icon" matTooltip="Selecciona uno o varios grupos para enviar el mensaje">info</mat-icon></label>
+          <div class="msg-grupos-grid">
+            @for (g of misGrupos(); track g.id) {
+              <div class="msg-grupo-selectable" [class.msg-grupo-selectable--active]="gruposSeleccionados().has(g.id)" (click)="toggleGrupoSeleccion(g.id)">
+                <div class="msg-grupo-checkbox">
+                  <mat-icon>{{ gruposSeleccionados().has(g.id) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                </div>
+                <div class="msg-avatar msg-avatar--group"><mat-icon>groups</mat-icon></div>
+                <div class="msg-grupo-info">
+                  <span class="msg-grupo-name">{{ g.nombre }}</span>
+                  <span class="msg-grupo-count">{{ miembrosPorGrupo().get(g.id)?.length || 0 }} miembros</span>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="msg-grupal-summary">
+            <mat-icon>group</mat-icon>
+            <strong>{{ gruposSeleccionados().size }} grupos seleccionados</strong> · {{ totalDestinatariosUnicos() }} miembros en total
+          </div>
+        </div>
+
+        <div class="msg-field">
+          <label>Mensaje</label>
+          <textarea class="msg-input msg-textarea" rows="4" maxlength="500" [ngModel]="mensajeGrupalTexto()" (ngModelChange)="mensajeGrupalTexto.set($event)" placeholder="Escribe el mensaje grupal aquí..."></textarea>
+          <div class="msg-char-counter">{{ mensajeGrupalTexto().length }} / 500</div>
+        </div>
+
+        <div class="msg-grupal-actions">
+          <span class="msg-info-text"><mat-icon>info</mat-icon> El mensaje se enviará a todos los miembros de los grupos seleccionados.</span>
+          <button class="msg-btn msg-btn--primary" [disabled]="gruposSeleccionados().size === 0 || !mensajeGrupalTexto().trim() || enviandoGrupal()" (click)="enviarMensajeGrupal()">
+            @if (enviandoGrupal()) {
+              <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+            } @else {
+              <mat-icon>send</mat-icon>
+            }
+            Enviar mensaje al grupo
+          </button>
+        </div>
+
+        <div class="msg-section-title" style="margin-top: 24px;">
+          Mensajes grupales enviados
+        </div>
+        <div class="msg-grupos-enviados-list">
+          @for (msg of grupalesEnviados(); track msg.id) {
+            <div class="msg-grupal-card" [class.msg-grupal-card--active]="mensajeDetalleGrupal()?.id === msg.id" (click)="abrirDetalleGrupal(msg)">
+              <div class="msg-grupal-card__icon"><mat-icon>campaign</mat-icon></div>
+              <div class="msg-grupal-card__content">
+                <p class="msg-grupal-card__text">{{ msg.contenido }}</p>
+              </div>
+              <div class="msg-grupal-card__meta">
+                <span class="msg-badge-grupal">Mensaje grupal</span>
+                <span class="msg-grupal-card__date">
+                  <mat-icon style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle; margin-right: 2px;">done_all</mat-icon>
+                  {{ msg.createdAt | date:'shortTime' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Vista previa y detalles -->
+      <div class="msg-grupal-sidebar">
+        @if (!mensajeDetalleGrupal()) {
+          <div class="msg-section-title">Vista previa / Confirmación</div>
+          <div class="msg-preview-card msg-preview-card--grupal">
+            <div class="msg-preview-header">
+              <span class="msg-badge-grupal"><mat-icon>campaign</mat-icon> Mensaje grupal</span>
+            </div>
+            <p class="msg-preview-body">{{ mensajeGrupalTexto() || 'Vista previa del mensaje...' }}</p>
+            <div class="msg-preview-footer">
+              Total destinatarios: <strong>{{ totalDestinatariosUnicos() }}</strong>
+            </div>
+          </div>
+        } @else {
+          <!-- Detalles del mensaje enviado -->
+          <div class="msg-section-title">Estado de lectura</div>
+          @if (lecturasGrupalActivo()) {
+            <div class="msg-lectura-stats">
+              <p>Leído por {{ lecturasGrupalActivo()!.readCount }} de {{ lecturasGrupalActivo()!.totalRecipients }} miembros</p>
+              <div class="msg-progress-bar">
+                <div class="msg-progress-fill" [style.width.%]="(lecturasGrupalActivo()!.readCount / lecturasGrupalActivo()!.totalRecipients) * 100 || 0"></div>
+              </div>
+              <div class="msg-lectura-tabs">
+                <mat-tab-group>
+                  <mat-tab label="Leídos ({{ lecturasGrupalActivo()!.readCount }})">
+                    <div class="msg-lectura-list">
+                      @for (u of lecturasGrupalActivo()!.readUsers; track u.usuarioId) {
+                        <div class="msg-lectura-item">
+                          <div class="msg-avatar msg-avatar--sm">{{ inicialEnAvatar(u.usuarioId) }}</div>
+                          <span class="msg-lectura-name">{{ u.usuarioId }}</span>
+                          <span class="msg-lectura-time">Leído {{ u.readAt | date:'shortTime' }}</span>
+                        </div>
+                      }
+                    </div>
+                  </mat-tab>
+                  <mat-tab label="Pendientes ({{ lecturasGrupalActivo()!.pendingCount }})">
+                    <div class="msg-lectura-list">
+                      @for (u of lecturasGrupalActivo()!.pendingUsers; track u.usuarioId) {
+                        <div class="msg-lectura-item">
+                          <div class="msg-avatar msg-avatar--sm">{{ inicialEnAvatar(u.usuarioId) }}</div>
+                          <span class="msg-lectura-name">{{ u.usuarioId }}</span>
+                        </div>
+                      }
+                    </div>
+                  </mat-tab>
+                </mat-tab-group>
+              </div>
+            </div>
+          } @else {
+            <div class="msg-loading"><mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner></div>
+          }
+
+          @if (esAdminDeAlgunGrupo(mensajeDetalleGrupal()!.groupIds) && !mensajeDetalleGrupal()!.deletedByAdmin) {
+            <div class="msg-section-title" style="margin-top: 24px;">Acciones de administración</div>
+            <div class="msg-admin-actions">
+              <p class="msg-info-text">Como administrador puedes eliminar mensajes inapropiados para todos los miembros.</p>
+              <button class="msg-btn msg-btn--danger" (click)="eliminarMensajeGrupal(mensajeDetalleGrupal()!)">
+                <mat-icon>delete</mat-icon> Eliminar por inapropiado
+              </button>
+            </div>
+          } @else if (mensajeDetalleGrupal()!.deletedByAdmin) {
+            <div class="msg-admin-actions msg-admin-actions--deleted">
+              <mat-icon>gavel</mat-icon>
+              <p>Este mensaje fue eliminado por un administrador.</p>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- ── Modal Crear Grupo ────────────────────────────── -->
+@if (mostrarCrearGrupo()) {
+  <div class="msg-modal-overlay" (click)="mostrarCrearGrupo.set(false)">
+    <div class="msg-modal" (click)="$event.stopPropagation()">
+      <div class="msg-modal__header">
+        <mat-icon>group_add</mat-icon>
+        <span>Crear Nuevo Grupo</span>
+        <button class="msg-close-btn" (click)="mostrarCrearGrupo.set(false)"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="msg-modal__body">
+        <div class="msg-field">
+          <label>Nombre del Grupo</label>
+          <input class="msg-input" type="text" [ngModel]="nuevoGrupoNombre()" (ngModelChange)="nuevoGrupoNombre.set($event)" placeholder="Ej. Conductores Ruta 5" />
+        </div>
+        <div class="msg-field">
+          <label>Descripción</label>
+          <textarea class="msg-input" rows="2" [ngModel]="nuevoGrupoDesc()" (ngModelChange)="nuevoGrupoDesc.set($event)" placeholder="Propósito del grupo..."></textarea>
+        </div>
+
+        <!-- Buscar y agregar miembros -->
+        <div class="msg-field">
+          <label>Agregar miembros * <span style="font-weight:400;color:#9CA3AF">(mínimo 2)</span></label>
+          <div style="position:relative">
+            <input class="msg-input" type="text"
+                   [ngModel]="nuevoGrupoBusquedaQuery()"
+                   (ngModelChange)="onNuevoGrupoBusqueda($event)"
+                   placeholder="Buscar por nombre o email…" />
+            @if (nuevoGrupoBuscando()) {
+              <mat-progress-spinner style="position:absolute;right:8px;top:50%;transform:translateY(-50%)"
+                                   diameter="14" mode="indeterminate"></mat-progress-spinner>
+            }
+          </div>
+          @if (nuevoGrupoBusquedaResultados().length) {
+            <div style="border:1px solid #E5E7EB;border-radius:6px;max-height:130px;overflow-y:auto;margin-top:4px">
+              @for (u of nuevoGrupoBusquedaResultados(); track u.securityUserId) {
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #F3F4F6"
+                     (click)="agregarMiembroGrupo(u)">
+                  <span><b>{{ u.nombres }} {{ u.apellidos }}</b> <span style="color:#9CA3AF">{{ u.email }}</span></span>
+                  <mat-icon style="color:#2563EB;font-size:18px;width:18px;height:18px">add_circle</mat-icon>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        @if (nuevoGrupoMiembros().length) {
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+            @for (m of nuevoGrupoMiembros(); track m.securityUserId) {
+              <span style="display:flex;align-items:center;gap:4px;background:#DBEAFE;color:#1E40AF;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500">
+                {{ m.nombres }} {{ m.apellidos }}
+                <button style="background:none;border:none;cursor:pointer;color:#1E40AF;font-size:14px;padding:0;line-height:1"
+                        (click)="quitarMiembroGrupo(m)">×</button>
+              </span>
+            }
+          </div>
+        }
+
+        @if (nuevoGrupoMiembros().length < 2) {
+          <p style="font-size:12px;color:#EF4444;margin:0 0 10px;display:flex;align-items:center;gap:4px">
+            <mat-icon style="font-size:13px;width:13px;height:13px">error_outline</mat-icon>
+            Debes seleccionar al menos 2 miembros
+          </p>
+        }
+
+        <p class="msg-muted" style="font-size: 0.8rem; margin: 0 0 10px;">* Los grupos creados serán públicos y otros podrán unirse.</p>
+        <button class="msg-btn msg-btn--accent" style="width: 100%; margin-top: 10px;"
+                (click)="crearGrupo()"
+                [disabled]="creandoGrupo() || !nuevoGrupoNombre().trim() || nuevoGrupoMiembros().length < 2">
+          @if(creandoGrupo()) { <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner> } @else { <mat-icon>check</mat-icon> }
+          Crear Grupo
+        </button>
+      </div>
+    </div>
+  </div>
+}

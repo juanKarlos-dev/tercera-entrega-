@@ -1,0 +1,152 @@
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 32px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #e8eafd 0%, #f0f4ff 50%, #ffffff 100%);
+  margin-bottom: 24px;
+  border: 1px solid #c7d2fe;
+}
+
+.github-handle { margin: 0 0 8px; font-size: 0.95rem; color: #424242; }
+
+.lead { max-width: 640px; color: #475569; font-size: 1rem; line-height: 1.6; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.hero-icon {
+  font-size: 72px;
+  width: 72px;
+  height: 72px;
+  color: #2d3ef0;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 1.5rem 0 0.75rem;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #2d3ef0; }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 0.5rem;
+}
+
+.tile {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(45, 62, 240, 0.12) !important;
+  }
+
+  mat-icon { font-size: 30px; width: 30px; height: 30px; color: #2d3ef0; }
+  h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #1e1b4b; }
+  p  { flex: 1; margin: 0; color: #64748b; font-size: 0.85rem; line-height: 1.5; }
+}
+
+.conductor-grid {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 600px;
+}
+
+.conductor-tile {
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  gap: 12px;
+
+  .conductor-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  h2 { font-size: 1.05rem; text-align: center; }
+}
+
+.admin-empresa-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  max-width: 1080px;
+  margin-bottom: 0.5rem;
+}
+
+.admin-empresa-tile {
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  gap: 12px;
+
+  .admin-empresa-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  h2 { font-size: 1.05rem; text-align: center; }
+}
+
+.supervisor-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  max-width: 660px;
+  margin-bottom: 0.5rem;
+}
+
+.supervisor-tile {
+  width: 200px;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  gap: 12px;
+
+  .supervisor-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  h2 { font-size: 1.05rem; text-align: center; }
+}
+
+.ciudadano-grid {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 660px;
+}
+
+.ciudadano-tile {
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  gap: 12px;
+
+  .ciudadano-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  h2 { font-size: 1.05rem; text-align: center; }
+}

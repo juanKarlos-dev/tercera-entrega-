@@ -1,0 +1,86 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <div class="header-content">
+      <mat-icon class="title-icon">shield</mat-icon>
+      <div class="title-text">
+        <h2 mat-dialog-title>Asignar roles</h2>
+        <p class="subtitle">{{ data.user.name }} {{ data.user.lastname }} · {{ data.user.email }}</p>
+      </div>
+    </div>
+    <button mat-icon-button mat-dialog-close class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div mat-dialog-content class="dialog-body">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        <p>Cargando roles disponibles...</p>
+      </div>
+    } @else {
+      <div class="status-summary">
+        <span class="status-badge" [class.active]="data.user.active !== false">
+          <span class="dot"></span>
+          {{ data.user.active !== false ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <div class="roles-list-section">
+        <label class="section-label">ROLES DISPONIBLES</label>
+        <div class="roles-grid">
+          @for (role of availableRoles(); track role.id) {
+            <div class="role-item" [class.checked]="isSelected(role.id)" (click)="toggleRole(role.id)">
+              <div class="role-checkbox">
+                <mat-checkbox [checked]="isSelected(role.id)" (click)="$event.stopPropagation()" (change)="toggleRole(role.id)"></mat-checkbox>
+              </div>
+              <div class="role-info">
+                <span class="role-name">{{ role.name }}</span>
+                <span class="role-desc">{{ role.description || 'Sin descripción' }}</span>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-roles">
+              <mat-icon>info</mat-icon>
+              <p>No hay roles disponibles en el sistema.</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (mostrarSelectorEmpresa()) {
+        <div class="empresa-section" style="margin-top: 1.5rem;">
+          <label class="section-label">EMPRESA A ADMINISTRAR</label>
+          <mat-form-field appearance="outline" style="width:100%;margin-top:8px">
+            <mat-label>Empresa</mat-label>
+            <mat-select [value]="selectedEmpresaId()" (valueChange)="selectedEmpresaId.set($event)">
+              <mat-option [value]="null">— Selecciona una empresa —</mat-option>
+              @for (e of empresas(); track e.id) {
+                <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+    }
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div mat-dialog-actions align="end" class="dialog-actions">
+    <button mat-button mat-dialog-close [disabled]="isSaving()">Cancelar</button>
+    <button mat-raised-button color="primary"
+            [disabled]="!isChanged() || isSaving() || isLoading()"
+            (click)="save()"
+            class="save-btn">
+      @if (isSaving()) {
+        <mat-icon><mat-spinner diameter="18"></mat-spinner></mat-icon>
+      } @else {
+        <mat-icon>save</mat-icon>
+      }
+      Guardar cambios
+    </button>
+  </div>
+</div>

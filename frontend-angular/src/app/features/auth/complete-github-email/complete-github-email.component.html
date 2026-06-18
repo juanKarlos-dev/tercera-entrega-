@@ -1,0 +1,20 @@
+<div class="page">
+  <mat-card class="card mat-elevation-z2">
+    <h1>Completar correo (GitHub)</h1>
+    <p class="hint">
+      Tu cuenta de GitHub no compartió un email utilizable. Indica un correo alternativo válido para finalizar el
+      registro.
+    </p>
+    @if (pendingUsername) {
+      <p class="meta">Usuario GitHub: &#64;{{ pendingUsername }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" />
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit" [disabled]="busy">Guardar y continuar</button>
+    </form>
+  </mat-card>
+</div>

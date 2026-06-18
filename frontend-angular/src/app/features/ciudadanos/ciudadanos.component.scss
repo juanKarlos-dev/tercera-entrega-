@@ -1,0 +1,4 @@
+.form-card { margin-bottom: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; .col-2 { grid-column: span 2; } }
+.full-width { width: 100%; }
+.count { color: #64748b; font-size: 0.9rem; }

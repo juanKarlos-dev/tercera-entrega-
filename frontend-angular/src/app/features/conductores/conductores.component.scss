@@ -1,0 +1,64 @@
+.form-card  { margin-bottom: 1.5rem; }
+.form-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.full-width { width: 100%; }
+.count      { color: #64748b; font-size: 0.9rem; }
+
+.picker-anchor {
+  position: absolute;
+  width: 0; height: 0;
+  overflow: hidden; opacity: 0; pointer-events: none;
+  input { width: 0; height: 0; border: none; outline: none; }
+}
+
+.datetime-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dt-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  user-select: none;
+
+  &:hover {
+    border-color: #90caf9;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.08);
+  }
+}
+
+.dt-date-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dt-weekday {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.dt-date-main {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1a1a2e;
+
+  &.dt-placeholder {
+    font-weight: 400;
+    color: #bbb;
+    font-size: 14px;
+  }
+}

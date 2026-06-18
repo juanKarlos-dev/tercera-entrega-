@@ -1,0 +1,155 @@
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 1.5rem 0.5rem;
+  
+  .header-info {
+    h2 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e1b4b; }
+    .role-desc { color: #64748b; font-size: 0.9rem; margin: 0.25rem 0 0; }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    
+    mat-slide-toggle {
+      ::ng-deep .mdc-label { font-size: 0.8rem; font-weight: 700; color: #64748b; }
+    }
+    
+    button { color: #94a3b8; }
+  }
+}
+
+:host ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  width: min(920px, calc(100vw - 32px));
+  max-width: 920px;
+  box-sizing: border-box;
+}
+
+mat-dialog-content.premium-scroll {
+  padding: 1rem 1.5rem;
+  width: 100%;
+  max-width: 920px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.advanced-panel {
+  margin-top: 1rem;
+}
+
+.permissions-catalog {
+  width: 100%;
+}
+
+.module-section {
+  margin-bottom: 2.5rem;
+  &:last-child { margin-bottom: 0; }
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  
+  mat-icon { color: #2d3ef0; font-size: 22px; width: 22px; height: 22px; }
+  h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .spacer { flex: 1; }
+  .btn-select-all { font-size: 0.75rem; color: #2d3ef0; font-weight: 700; }
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.perm-item {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 0;
+  
+  &:hover { background: #f1f4ff; border-color: #2d3ef0; }
+  &.selected { background: #f0f3ff; border-color: #2d3ef0; }
+  
+  ::ng-deep .mat-mdc-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .perm-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    width: 100%;
+
+    .friendly-label {
+      font-size: 0.9rem;
+      color: #1e1b4b;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .technical-data {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+      
+      .method {
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 1px 4px;
+        border-radius: 3px;
+        min-width: 40px;
+        text-align: center;
+        text-transform: uppercase;
+        &.get { background: #f0fdf4; color: #16a34a; }
+        &.post { background: #f0f7ff; color: #2563eb; }
+        &.put, &.patch { background: #fff7ed; color: #ea580c; }
+        &.delete { background: #fef2f2; color: #dc2626; }
+      }
+
+      .url {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+mat-dialog-actions {
+  padding: 1.5rem;
+  gap: 1rem;
+  button { border-radius: 12px; font-weight: 700; padding: 0.5rem 1.5rem; }
+  .btn-save { background: #2d3ef0; color: white; box-shadow: 0 4px 12px rgba(45, 62, 240, 0.2); }
+}
+
+@media (max-width: 800px) {
+  .permissions-grid { grid-template-columns: 1fr; }
+  .dialog-header { 
+    flex-direction: column; 
+    gap: 1rem;
+    .header-actions { width: 100%; justify-content: space-between; }
+  }
+}

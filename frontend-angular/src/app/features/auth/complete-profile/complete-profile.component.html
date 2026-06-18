@@ -1,0 +1,18 @@
+<div class="page">
+  <mat-card class="card mat-elevation-z2">
+    <h1>Completar perfil</h1>
+    <p class="hint">Dirección y teléfono son obligatorios para activar tu cuenta en el sistema.</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Dirección</mat-label>
+        <input matInput formControlName="address" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit" [disabled]="busy || !userId">Guardar</button>
+    </form>
+  </mat-card>
+</div>

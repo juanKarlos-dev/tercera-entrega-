@@ -1,0 +1,223 @@
+<div class="page-header">
+  <h1>Paraderos</h1>
+  <p>Puntos de parada en la red de transporte</p>
+</div>
+
+<mat-tab-group>
+  <mat-tab label="Lista de Paraderos">
+    <div class="tab-content">
+      <div class="action-bar">
+        <span class="count">{{ paraderos().length }} paradero(s)</span>
+        @if (!esCiudadano()) {
+          <button mat-flat-button color="primary" (click)="openNew()">
+            <mat-icon>add</mat-icon> Nuevo paradero
+          </button>
+        }
+      </div>
+
+      @if (showForm()) {
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>{{ editingId() ? 'Editar paradero' : 'Nuevo paradero' }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="form" class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre *</mat-label>
+                <input matInput formControlName="nombre">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo</mat-label>
+                <mat-select formControlName="tipo">
+                  <mat-option value="PARADERO">Paradero</mat-option>
+                  <mat-option value="ESTACION">Estación</mat-option>
+                  <mat-option value="TERMINAL">Terminal</mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Zona</mat-label>
+                <mat-select formControlName="zonaId">
+                  <mat-option [value]="null">— Ninguna —</mat-option>
+                  @for (z of zonas(); track z.id) {
+                    <mat-option [value]="z.id">{{ z.nombre }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Latitud *</mat-label>
+                <input matInput type="number" formControlName="latitud" step="0.000001">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Longitud *</mat-label>
+                <input matInput type="number" formControlName="longitud" step="0.000001">
+              </mat-form-field>
+            </form>
+            <p class="hint"><mat-icon style="font-size:15px;vertical-align:middle">info</mat-icon> Haz clic en el mapa para marcar la ubicación exacta</p>
+            <app-map-picker
+              #mapPicker
+              [lat]="pickedLat"
+              [lng]="pickedLng"
+              [height]="300"
+              (locationPicked)="onMapPick($event)">
+            </app-map-picker>
+          </mat-card-content>
+          <mat-card-actions align="end">
+            <button mat-button (click)="cancel()">Cancelar</button>
+            <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="save()">
+              {{ editingId() ? 'Actualizar' : 'Crear' }}
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+
+      @if (paraderoSeleccionado()) {
+        <mat-card class="horarios-card" style="margin-top:1.5rem">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon style="vertical-align:middle;margin-right:0.4rem;color:#2d3ef0">route</mat-icon>
+              Rutas que pasan por — {{ paraderoSeleccionado()!.nombre }}
+            </mat-card-title>
+            <button mat-icon-button (click)="paraderoSeleccionado.set(null)" style="margin-left:auto" matTooltip="Cerrar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-card-header>
+          <mat-card-content style="padding:1rem 1.5rem">
+            @if (rutasDelParadero().length === 0) {
+              <p style="color:#64748b;text-align:center;padding:1.5rem 0">No hay rutas que pasen por este paradero</p>
+            } @else {
+              <div class="ruta-tabla-wrap">
+                <table class="ruta-mapa-tabla">
+                  <thead>
+                    <tr>
+                      <th>Nombre ruta</th>
+                      <th>Tarifa</th>
+                      <th>Tiempo estimado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of rutasDelParadero(); track r.id) {
+                      <tr>
+                        <td><b>{{ r.nombre }}</b></td>
+                        <td>{{ r.tarifa != null ? ('$ ' + r.tarifa) : '—' }}</td>
+                        <td>{{ r.tiempoEnParadero != null ? (r.tiempoEnParadero + ' min') : '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <mat-card>
+        <mat-card-content style="padding:0">
+          <table mat-table [dataSource]="paraderos()" class="full-width">
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let p"><b>{{ p.nombre }}</b></td>
+            </ng-container>
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let p">{{ p.tipo }}</td>
+            </ng-container>
+            <ng-container matColumnDef="zona">
+              <th mat-header-cell *matHeaderCellDef>Zona</th>
+              <td mat-cell *matCellDef="let p">{{ p.zona?.nombre || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="latitud">
+              <th mat-header-cell *matHeaderCellDef>Latitud</th>
+              <td mat-cell *matCellDef="let p">{{ p.latitud | number:'1.4-6' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="longitud">
+              <th mat-header-cell *matHeaderCellDef>Longitud</th>
+              <td mat-cell *matCellDef="let p">{{ p.longitud | number:'1.4-6' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let p">
+                <button mat-icon-button matTooltip="Ver rutas" (click)="verRutas(p)"><mat-icon>route</mat-icon></button>
+                @if (!esCiudadano()) {
+                  <button mat-icon-button (click)="openEdit(p)" matTooltip="Editar"><mat-icon>edit</mat-icon></button>
+                  <button mat-icon-button color="warn" (click)="delete(p)" matTooltip="Eliminar"><mat-icon>delete</mat-icon></button>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columns"></tr>
+            <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Buscar por nombre">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content>
+          <div class="search-bar">
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Nombre del paradero</mat-label>
+              <input matInput [ngModel]="busquedaNombre()" (ngModelChange)="busquedaNombre.set($event)">
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="buscarPorNombre()">Buscar</button>
+          </div>
+          @if (buscados().length) {
+            <table mat-table [dataSource]="buscados()" class="full-width" style="margin-top:1rem">
+              <ng-container matColumnDef="nombre">
+                <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                <td mat-cell *matCellDef="let p"><b>{{ p.nombre }}</b></td>
+              </ng-container>
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let p">{{ p.tipo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="latitud">
+                <th mat-header-cell *matHeaderCellDef>Latitud</th>
+                <td mat-cell *matCellDef="let p">{{ p.latitud }}</td>
+              </ng-container>
+              <ng-container matColumnDef="longitud">
+                <th mat-header-cell *matHeaderCellDef>Longitud</th>
+                <td mat-cell *matCellDef="let p">{{ p.longitud }}</td>
+              </ng-container>
+              <ng-container matColumnDef="acciones"><th mat-header-cell *matHeaderCellDef></th><td mat-cell *matCellDef="let p"></td></ng-container>
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+            </table>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Paraderos Cercanos">
+    <div class="tab-content">
+      <mat-card>
+        <mat-card-content>
+          <div class="cercanos-header">
+            <p>Encuentra los 5 paraderos más cercanos a tu ubicación actual</p>
+            <button mat-flat-button color="accent" (click)="buscarCercanos()" [disabled]="localizando()">
+              <mat-icon>my_location</mat-icon>
+              {{ localizando() ? 'Localizando...' : 'Usar mi ubicación' }}
+            </button>
+          </div>
+          @if (cercanos().length) {
+            <div class="cercanos-list">
+              @for (p of cercanos(); track p.id; let i = $index) {
+                <div class="cercano-item">
+                  <div class="cercano-num">{{ i + 1 }}</div>
+                  <div class="cercano-info">
+                    <strong>{{ p.nombre }}</strong>
+                    @if (p.distancia) { <span class="dist">{{ p.distancia | number:'1.0-0' }} m</span> }
+                  </div>
+                </div>
+              }
+            </div>
+            <app-map-picker #cercanosMap [height]="350" [readonly]="true" [lat]="cercanos()[0].latitud!" [lng]="cercanos()[0].longitud!"></app-map-picker>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+</mat-tab-group>

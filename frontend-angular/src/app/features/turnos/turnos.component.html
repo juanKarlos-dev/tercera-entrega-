@@ -1,0 +1,323 @@
+<div class="page-header">
+  <h1>Turnos</h1>
+  <p>Asignación de buses y conductores a rutas por fecha</p>
+</div>
+
+<div class="action-bar">
+  <span class="count">{{ turnos().length }} turno(s)</span>
+  @if (!esSoloLectura() && !esConductor()) {
+    <button mat-flat-button color="primary" (click)="openNew()">
+      <mat-icon>add</mat-icon> Nuevo turno
+    </button>
+  }
+</div>
+
+@if (showForm()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>{{ editingId() ? 'Editar turno' : 'Nuevo turno' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" class="form-grid">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Bus *</mat-label>
+          <mat-select formControlName="busId">
+            @for (b of buses(); track b.id) {
+              <mat-option [value]="b.id">{{ b.placa }} — {{ b.modelo }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Conductor *</mat-label>
+          <mat-select formControlName="conductorId">
+            @for (c of conductores(); track c.id) {
+              <mat-option [value]="c.id">
+                {{ c.persona ? (c.persona.nombres + ' ' + c.persona.apellidos) : c.numeroLicencia }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- ── Fecha/hora inicio ── -->
+        <div class="datetime-group">
+          <span style="display:block;font-size:11px;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:4px;">📅 FECHA/HORA INICIO</span>
+          <div class="picker-anchor">
+            <input [matDatepicker]="pickerInicio" formControlName="fechaInicio" readonly>
+            <mat-datepicker #pickerInicio></mat-datepicker>
+          </div>
+
+          <div class="dt-block" style="border-radius:10px;padding:10px 14px" (click)="pickerInicio.open()">
+            <div class="dt-date-section">
+              <span class="dt-weekday">
+                {{ getNombreDia(form.get('fechaInicio')?.value) || 'Fecha inicio *' }}
+              </span>
+              <span class="dt-date-main" [class.dt-placeholder]="!form.get('fechaInicio')?.value">
+                {{ getNombreFecha(form.get('fechaInicio')?.value) || 'Seleccionar fecha…' }}
+              </span>
+            </div>
+
+            <div class="dt-time-pill" (click)="$event.stopPropagation()">
+              <!-- Horas 1-12 · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, horas12, 'horaInicio')">
+                @for (item of getWheelItems(horas12, form.get('horaInicio')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(horas12, 'horaInicio', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+              <span class="wheel-colon">:</span>
+              <!-- Minutos 00-59 · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, minutosAll, 'minutoInicio')">
+                @for (item of getWheelItems(minutosAll, form.get('minutoInicio')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(minutosAll, 'minutoInicio', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+              <!-- AM/PM · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" (wheel)="onWheelScroll($event, ampmOpts, 'ampmInicio')">
+                @for (item of getWheelItems(ampmOpts, form.get('ampmInicio')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(ampmOpts, 'ampmInicio', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          @if (form.get('fechaInicio')?.invalid && form.get('fechaInicio')?.touched) {
+            <div class="group-error">Requerido</div>
+          }
+        </div>
+
+        <!-- ── Fecha/hora fin ── -->
+        <div class="datetime-group">
+          <span style="display:block;font-size:11px;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.05em;font-weight:500;margin-bottom:4px;">📅 FECHA/HORA FIN</span>
+          <div class="picker-anchor">
+            <input [matDatepicker]="pickerFin" formControlName="fechaFin" readonly>
+            <mat-datepicker #pickerFin></mat-datepicker>
+          </div>
+
+          <div class="dt-block" style="border-radius:10px;padding:10px 14px;background:#f5f5f5" (click)="pickerFin.open()">
+            <div class="dt-date-section">
+              <span class="dt-weekday">
+                {{ getNombreDia(form.get('fechaFin')?.value) || 'Fecha fin *' }}
+              </span>
+              <span class="dt-date-main" [class.dt-placeholder]="!form.get('fechaFin')?.value">
+                {{ getNombreFecha(form.get('fechaFin')?.value) || 'Seleccionar fecha…' }}
+              </span>
+            </div>
+
+            <div class="dt-time-pill" (click)="$event.stopPropagation()">
+              <!-- Horas 1-12 · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, horas12, 'horaFin')">
+                @for (item of getWheelItems(horas12, form.get('horaFin')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(horas12, 'horaFin', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+              <span class="wheel-colon">:</span>
+              <!-- Minutos 00-59 · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" style="width:36px" (wheel)="onWheelScroll($event, minutosAll, 'minutoFin')">
+                @for (item of getWheelItems(minutosAll, form.get('minutoFin')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(minutosAll, 'minutoFin', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+              <!-- AM/PM · 3 ítems -->
+              <div class="wheel-col wheel-col--ampm" (wheel)="onWheelScroll($event, ampmOpts, 'ampmFin')">
+                @for (item of getWheelItems(ampmOpts, form.get('ampmFin')?.value, 3); track item.offset) {
+                  <div class="wheel-item"
+                       [style.opacity]="wheelOpacity(item.offset)"
+                       [style.font-size]="wheelFontSize(item.offset)"
+                       [style.font-weight]="item.offset === 0 ? '700' : '400'"
+                       [style.color]="item.offset === 0 ? '#111' : '#555'"
+                       (click)="onWheelItemClick(ampmOpts, 'ampmFin', item.offset)">
+                    {{ item.label }}
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          @if (form.get('fechaFin')?.invalid && form.get('fechaFin')?.touched) {
+            <div class="group-error">Requerido</div>
+          }
+          @if (form.hasError('finAntesDInicio') && form.touched) {
+            <div class="group-error">La fecha/hora fin debe ser posterior a la de inicio.</div>
+          }
+        </div>
+
+        <!-- Separador antes de botones -->
+        <div class="col-2" style="padding-top:8px">
+          <hr style="border:none;border-top:1px solid #e0e0e0;margin:0">
+        </div>
+
+      </form>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancel()">Cancelar</button>
+      <button class="btn-crear"
+              [class.btn-crear--active]="form.valid"
+              [disabled]="form.invalid"
+              (click)="save()">
+        {{ editingId() ? 'Actualizar' : 'Crear' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+@if (iniciarTarget()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Iniciar turno #{{ iniciarTarget()!.id }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Estado confirmado del bus *</mat-label>
+          <mat-select [ngModel]="estadoConfirmadoBus()" (ngModelChange)="estadoConfirmadoBus.set($event)">
+            @for (e of estadosBus; track e) {
+              <mat-option [value]="e">{{ e }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancelarInicio()">Cancelar</button>
+      <button mat-flat-button color="primary" [disabled]="iniciando()" (click)="confirmarInicio()">
+        <mat-icon>play_circle</mat-icon> Confirmar inicio
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+@if (finalizarTarget()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>¿Finalizar turno?</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p style="margin-bottom:1rem">Turno <b>#{{ finalizarTarget()!.id }}</b></p>
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Observaciones de cierre (opcional)</mat-label>
+        <textarea matInput rows="3"
+          [ngModel]="observacionesCierre"
+          (ngModelChange)="observacionesCierre = $event">
+        </textarea>
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancelarFinalizacion()">Cancelar</button>
+      <button mat-flat-button color="warn" [disabled]="finalizando()" (click)="confirmarFinalizacion()">
+        <mat-icon>stop_circle</mat-icon> Confirmar finalización
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+@if (retrasoTarget()) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>Reportar Retraso — Turno #{{ retrasoTarget()!.id }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p style="margin-bottom:1rem;color:#6B7280">
+        Indica el retraso estimado. Este valor se sumará al ETA que ven los pasajeros.
+      </p>
+      <mat-form-field appearance="outline" style="width:100%;margin-bottom:12px">
+        <mat-label>Minutos de retraso (0 – 120)</mat-label>
+        <input matInput type="number" min="0" max="120"
+               [(ngModel)]="minutosRetrasoInput" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" style="width:100%">
+        <mat-label>Motivo (opcional)</mat-label>
+        <input matInput type="text" placeholder="Tráfico, accidente, etc."
+               [(ngModel)]="motivoRetrasoInput" />
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="cancelarRetraso()">Cancelar</button>
+      <button mat-flat-button color="accent" [disabled]="reportandoRetraso()" (click)="confirmarRetraso()">
+        <mat-icon>warning_amber</mat-icon> Registrar retraso
+      </button>
+    </mat-card-actions>
+  </mat-card>
+}
+
+<mat-card>
+  <mat-card-content style="padding:0">
+    <table mat-table [dataSource]="turnos()" class="full-width">
+      <ng-container matColumnDef="fechaInicioProgramada">
+        <th mat-header-cell *matHeaderCellDef>Inicio programado</th>
+        <td mat-cell *matCellDef="let t">{{ t.fechaInicioProgramada | date:'short' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="fechaFinProgramada">
+        <th mat-header-cell *matHeaderCellDef>Fin programado</th>
+        <td mat-cell *matCellDef="let t">{{ t.fechaFinProgramada | date:'short' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let t">
+          <span [class]="(t.estado ?? 'PENDIENTE') | estadoBadge">{{ t.estado ?? 'PENDIENTE' }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let t">
+          @if (t.estado === 'PROGRAMADO') {
+            <button mat-icon-button color="primary" matTooltip="Iniciar turno" (click)="abrirInicioTurno(t)" [disabled]="iniciando()">
+              <mat-icon>play_circle</mat-icon>
+            </button>
+          }
+          @if (t.estado === 'EN_CURSO') {
+            <button mat-icon-button color="warn" matTooltip="Finalizar turno" [disabled]="finalizando()" (click)="abrirFinalizacionTurno(t)">
+              <mat-icon>stop_circle</mat-icon>
+            </button>
+            @if (esConductor()) {
+              <button mat-icon-button color="accent" matTooltip="Reportar retraso" (click)="abrirRetraso(t)">
+                <mat-icon>warning_amber</mat-icon>
+              </button>
+            }
+          }
+          @if (!esSoloLectura() && !esConductor()) {
+            <button mat-icon-button matTooltip="Editar" (click)="openEdit(t)"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="delete(t)"><mat-icon>delete</mat-icon></button>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+    </table>
+  </mat-card-content>
+</mat-card>
