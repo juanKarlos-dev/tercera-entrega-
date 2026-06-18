@@ -1,0 +1,268 @@
+{
+  "name": "Reporte Automático de Clima 6:00 AM",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "Bogota"
+            },
+            {
+              "name": "appid",
+              "value": "TU_API_KEY_AQUI"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "lang",
+              "value": "es"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "OpenWeatherMap",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3001/api/v1/ciudadanos/alertas-activas",
+        "options": {}
+      },
+      "name": "Obtener Usuarios",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst currentHours = now.getHours();\nconst currentMinutes = now.getMinutes();\nconst nowMins = currentHours * 60 + currentMinutes;\n\nreturn $input.all().filter(item => {\n  if (!item.json.horarioViaje) return false;\n  const parts = item.json.horarioViaje.split(':');\n  const h = parseInt(parts[0], 10);\n  const m = parseInt(parts[1], 10);\n  \n  const viajeMins = h * 60 + m;\n  const diff = viajeMins - nowMins;\n  \n  // diff is time left until journey\n  // We are looking for journeys within the next 2 hours\n  return diff >= 0 && diff <= 120;\n});"
+      },
+      "name": "Filtrar por Horario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $('OpenWeatherMap').item.json.weather[0].id }}",
+              "operation": "smaller",
+              "value2": 600
+            }
+          ]
+        }
+      },
+      "name": "Lloverá?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Split In Batches Lluvia",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "🌧️ Alerta de lluvia para tu viaje hoy a las {{ $json.horarioViaje }}",
+        "text": "=Hoy lloverá ({{ $('OpenWeatherMap').item.json.weather[0].description }}). Temperatura: {{ $('OpenWeatherMap').item.json.main.temp }}°C. Te recomendamos salir 15 minutos antes. ¡No olvides tu paraguas!",
+        "toEmail": "={{ $json.email }}"
+      },
+      "name": "Enviar Alerta Lluvia",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "name": "Split In Batches Favorable",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "☀️ Clima favorable para tu viaje hoy a las {{ $json.horarioViaje }}",
+        "text": "=Clima favorable hoy ({{ $('OpenWeatherMap').item.json.weather[0].description }}). Temperatura: {{ $('OpenWeatherMap').item.json.main.temp }}°C. ¡Buen viaje!",
+        "toEmail": "={{ $json.email }}"
+      },
+      "name": "Enviar Clima Favorable",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenWeatherMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenWeatherMap": {
+      "main": [
+        [
+          {
+            "node": "Obtener Usuarios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Usuarios": {
+      "main": [
+        [
+          {
+            "node": "Filtrar por Horario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar por Horario": {
+      "main": [
+        [
+          {
+            "node": "Lloverá?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lloverá?": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches Lluvia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches Favorable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches Lluvia": {
+      "main": [
+        [
+          {
+            "node": "Enviar Alerta Lluvia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches Favorable": {
+      "main": [
+        [
+          {
+            "node": "Enviar Clima Favorable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Alerta Lluvia": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches Lluvia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Clima Favorable": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches Favorable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
