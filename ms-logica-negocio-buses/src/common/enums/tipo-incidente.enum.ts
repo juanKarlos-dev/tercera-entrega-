@@ -1,0 +1,7 @@
+export enum TipoIncidente {
+  MECANICO = 'MECANICO',
+  ACCIDENTE = 'ACCIDENTE',
+  RETRASO = 'RETRASO',
+  PROBLEMA_PASAJERO = 'PROBLEMA_PASAJERO',
+  OTRO = 'OTRO',
+}

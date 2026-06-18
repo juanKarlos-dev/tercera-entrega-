@@ -1,0 +1,77 @@
+{
+  "name": "PQRS Notificar Estado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pqrs-notificar-estado",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ 200, 300 ],
+      "webhookId": "pqrs-notificar-estado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.body.estadoNuevo }}", "value2": "EN_REVISION" },
+            { "value1": "={{ $json.body.estadoNuevo }}", "value2": "EN_PROCESO" },
+            { "value1": "={{ $json.body.estadoNuevo }}", "value2": "RESUELTO" }
+          ]
+        }
+      },
+      "name": "Switch Estado",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [ 400, 300 ]
+    },
+    {
+      "parameters": {
+        "subject": "=Actualización de tu PQRS: {{ $('Webhook').item.json.body.radicado }}",
+        "text": "=Tu PQRS {{ $('Webhook').item.json.body.radicado }} está siendo revisado por un agente.",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}"
+      },
+      "name": "Email Revision",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [ 600, 100 ]
+    },
+    {
+      "parameters": {
+        "subject": "=Actualización de tu PQRS: {{ $('Webhook').item.json.body.radicado }}",
+        "text": "=Tu PQRS {{ $('Webhook').item.json.body.radicado }} está siendo procesado.",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}"
+      },
+      "name": "Email Proceso",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [ 600, 300 ]
+    },
+    {
+      "parameters": {
+        "subject": "=Tu PQRS ha sido Resuelto: {{ $('Webhook').item.json.body.radicado }}",
+        "text": "=Tu PQRS {{ $('Webhook').item.json.body.radicado }} ha sido resuelto.\\n\\nRespuesta oficial:\\n{{ $('Webhook').item.json.body.respuesta }}",
+        "toEmail": "={{ $('Webhook').item.json.body.email }}"
+      },
+      "name": "Email Resuelto",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [ 600, 500 ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [ [ { "node": "Switch Estado", "type": "main", "index": 0 } ] ]
+    },
+    "Switch Estado": {
+      "main": [
+        [ { "node": "Email Revision", "type": "main", "index": 0 } ],
+        [ { "node": "Email Proceso", "type": "main", "index": 0 } ],
+        [ { "node": "Email Resuelto", "type": "main", "index": 0 } ]
+      ]
+    }
+  }
+}

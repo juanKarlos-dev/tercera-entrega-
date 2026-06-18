@@ -1,0 +1,6 @@
+export enum TipoRecurrencia {
+  NINGUNA = 'NINGUNA',
+  LUNES_A_VIERNES = 'LUNES_A_VIERNES',
+  FINES_DE_SEMANA = 'FINES_DE_SEMANA',
+  DIARIA = 'DIARIA',
+}

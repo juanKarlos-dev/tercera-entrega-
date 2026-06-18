@@ -1,0 +1,5 @@
+export enum EstadoProgramacion {
+  PROGRAMADO = 'PROGRAMADO',
+  CANCELADO = 'CANCELADO',
+  FINALIZADO = 'FINALIZADO',
+}

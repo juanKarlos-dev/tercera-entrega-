@@ -1,0 +1,6 @@
+export enum EstadoPqrs {
+  PENDIENTE   = 'PENDIENTE',
+  EN_REVISION = 'EN_REVISION',
+  EN_PROCESO  = 'EN_PROCESO',
+  RESUELTO    = 'RESUELTO',
+}
