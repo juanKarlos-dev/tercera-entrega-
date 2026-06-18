@@ -1,0 +1,117 @@
+{
+  "name": "Agendamiento de Citas Transporte",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "citas-transporte",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ],
+      "webhookId": "citas-transporte"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "calendar": "primary",
+        "start": "={{ $('Webhook').item.json.body.body.fechaHora }}",
+        "end": "={{ $('Webhook').item.json.body.body.fechaHoraFin }}",
+        "summary": "=Cita: {{ $('Webhook').item.json.body.body.tipoConsulta }} - {{ $('Webhook').item.json.body.body.nombre }}",
+        "description": "=Atención: {{ $('Webhook').item.json.body.body.tipoAtencion }}\\nEmail: {{ $('Webhook').item.json.body.body.email }}\\nMotivo: {{ $('Webhook').item.json.body.body.motivo }}"
+      },
+      "name": "Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "=Confirmación de Cita: {{ $('Webhook').item.json.body.body.tipoConsulta }}",
+        "text": "=Hola {{ $('Webhook').item.json.body.body.nombre }},\\n\\nTu cita ha sido confirmada para el {{ $('Webhook').item.json.body.body.fechaHora }}.\\n\\nAtención: {{ $('Webhook').item.json.body.body.tipoAtencion }}\\nEnlace / Ubicación: {{ $('Webhook').item.json.body.body.tipoAtencion === 'Virtual' ? ($json.hangoutLink || 'Google Meet (link pendiente)') : 'Sede Principal' }}\\n\\nMotivo: {{ $('Webhook').item.json.body.body.motivo }}\\n\\nSi deseas cancelar, por favor comunícate con nosotros.\\n\\n[Cancelar Cita]",
+        "toEmail": "={{ $('Webhook').item.json.body.body.email }}"
+      },
+      "name": "Enviar Confirmacion",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "boolean": [
+            {
+              "name": "ok",
+              "value": true
+            }
+          ],
+          "string": [
+            {
+              "name": "mensaje",
+              "value": "Cita agendada correctamente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar": {
+      "main": [
+        [
+          {
+            "node": "Enviar Confirmacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Confirmacion": {
+      "main": [
+        [
+          {
+            "node": "Set Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
